@@ -4,6 +4,12 @@ variable "vpc_name" {
   default     = "vpc-skripsi"  # Default value
 }
 
+variable "environment" {
+  description = "Environment name"
+  type        = string
+  default     = "dev"  
+}
+
 variable "vpc_cidr" {
   description = "CIDR block for VPC"
   type        = string

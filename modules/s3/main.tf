@@ -1,23 +1,29 @@
-resource "aws_s3_bucket" "this" {
-  bucket = var.bucket_name
+resource "aws_s3_bucket" "bucket" {
+  bucket = "${var.project_name}-${var.environment}-emr-${random_string.bucket_suffix.result}"
   
   tags = merge({
-    Name        = var.bucket_name
+    Name        = vare.project_name
     Environment = var.environment
     ManagedBy   = "Terraform"
   }, var.additional_tags)
 }
 
-resource "aws_s3_bucket_versioning" "this" {
-  bucket = aws_s3_bucket.this.id
+resource "random_string" "bucket_suffix" {
+  length  = 8
+  special = false
+  upper   = false
+}
+
+resource "aws_s3_bucket_versioning" "bucket_versioning" {
+  bucket = aws_s3_bucket.bucket.id
   
   versioning_configuration {
     status = var.versioning_enabled ? "Enabled" : "Disabled"
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "this" {
-  bucket = aws_s3_bucket.this.id
+resource "aws_s3_bucket_public_access_block" "bucket_access" {
+  bucket = aws_s3_bucket.bucket.id
 
   block_public_acls       = var.public_access_block.block_public_acls
   block_public_policy     = var.public_access_block.block_public_policy
@@ -25,8 +31,8 @@ resource "aws_s3_bucket_public_access_block" "this" {
   restrict_public_buckets = var.public_access_block.restrict_public_buckets
 }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
-  bucket = aws_s3_bucket.this.id
+resource "aws_s3_bucket_server_side_encryption_configuration" "bucket_encryption" {
+  bucket = aws_s3_bucket.bucket.id
 
   rule {
     apply_server_side_encryption_by_default {

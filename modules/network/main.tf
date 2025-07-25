@@ -1,7 +1,13 @@
+variable "project_name" {
+  description = "Name of the project"
+  type        = string
+  default     = "my-emr-project"
+}
+
 resource "aws_vpc" "aws_vpc" {
   cidr_block = var.vpc_cidr
   tags = {
-    Name        = var.vpc_name
+    Name        = var.project_name
     Terraform   = "true"
     Environment = "dev"
   }
@@ -37,7 +43,7 @@ resource "aws_subnet" "public-subnet" {
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.aws_vpc.id
   tags = {
-    Name = "${var.vpc_name}-igw"
+    Name = "${var.project_name}-igw"
     Terraform = "true"
     Environment = "dev"
   }
@@ -92,7 +98,7 @@ resource "aws_route_table_association" "private" {
 }
 
 resource "aws_security_group" "web" {
-  name_prefix = "${var.vpc_name}-web-"
+  name_prefix = "${var.project_name}-web-"
   vpc_id      = aws_vpc.aws_vpc.id
 
   ingress {
@@ -107,5 +113,83 @@ resource "aws_security_group" "web" {
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_security_group" "emr_master_sg" {
+  name_prefix = "${var.project_name}-${var.environment}-emr-master-"
+  vpc_id      = aws_vpc.emr_vpc.id
+
+  # SSH access
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  # Spark UI
+  ingress {
+    from_port   = 4040
+    to_port     = 4040
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  # Jupyter/Zeppelin
+  ingress {
+    from_port   = 8888
+    to_port     = 8890
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  # All outbound traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-emr-master-sg"
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+resource "aws_security_group" "emr_slave_sg" {
+  name_prefix = "${var.project_name}-${var.environment}-emr-slave-"
+  vpc_id      = aws_vpc.emr_vpc.id
+
+  # Communication within cluster
+  ingress {
+    from_port = 0
+    to_port   = 65535
+    protocol  = "tcp"
+    self      = true
+  }
+
+  # Communication with master
+  ingress {
+    from_port                = 0
+    to_port                  = 65535
+    protocol                 = "tcp"
+    security_groups = [aws_security_group.emr_master_sg.id]
+  }
+
+  # All outbound traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-emr-slave-sg"
+    Environment = var.environment
+    Project     = var.project_name
   }
 }
