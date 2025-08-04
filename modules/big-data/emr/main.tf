@@ -60,8 +60,8 @@ data "aws_iam_instance_profile" "emr_profile" {
 # Bootstrap Script
 # ====================================
 resource "aws_s3_object" "bootstrap_script" {
-  bucket = local.bucket_name
-  key    = "bootstrap/install-python-packages.sh"
+  bucket  = local.bucket_name
+  key     = "bootstrap/install-python-packages.sh"
   content = <<-EOF
 #!/bin/bash
 # Install additional Python packages
@@ -133,25 +133,25 @@ resource "aws_emr_cluster" "cluster" {
       }
       Rules = [
         {
-          Name = "ScaleOutMemoryPercentage"
+          Name        = "ScaleOutMemoryPercentage"
           Description = "Scale out if YARNMemoryAvailablePercentage is less than 15"
           Action = {
             SimpleScalingPolicyConfiguration = {
-              AdjustmentType = "CHANGE_IN_CAPACITY"
+              AdjustmentType    = "CHANGE_IN_CAPACITY"
               ScalingAdjustment = 1
-              CoolDown = 300
+              CoolDown          = 300
             }
           }
           Trigger = {
             CloudWatchAlarmDefinition = {
               ComparisonOperator = "LESS_THAN"
-              EvaluationPeriods = 1
-              MetricName = "YARNMemoryAvailablePercentage"
-              Namespace = "AWS/ElasticMapReduce"
-              Period = 300
-              Statistic = "AVERAGE"
-              Threshold = 15.0
-              Unit = "PERCENT"
+              EvaluationPeriods  = 1
+              MetricName         = "YARNMemoryAvailablePercentage"
+              Namespace          = "AWS/ElasticMapReduce"
+              Period             = 300
+              Statistic          = "AVERAGE"
+              Threshold          = 15.0
+              Unit               = "PERCENT"
               Dimensions = {
                 JobFlowId = "$${emr.clusterId}"
               }
@@ -159,25 +159,25 @@ resource "aws_emr_cluster" "cluster" {
           }
         },
         {
-          Name = "ScaleInMemoryPercentage"
+          Name        = "ScaleInMemoryPercentage"
           Description = "Scale in if YARNMemoryAvailablePercentage is greater than 75"
           Action = {
             SimpleScalingPolicyConfiguration = {
-              AdjustmentType = "CHANGE_IN_CAPACITY"
+              AdjustmentType    = "CHANGE_IN_CAPACITY"
               ScalingAdjustment = -1
-              CoolDown = 300
+              CoolDown          = 300
             }
           }
           Trigger = {
             CloudWatchAlarmDefinition = {
               ComparisonOperator = "GREATER_THAN"
-              EvaluationPeriods = 1
-              MetricName = "YARNMemoryAvailablePercentage"
-              Namespace = "AWS/ElasticMapReduce"
-              Period = 300
-              Statistic = "AVERAGE"
-              Threshold = 75.0
-              Unit = "PERCENT"
+              EvaluationPeriods  = 1
+              MetricName         = "YARNMemoryAvailablePercentage"
+              Namespace          = "AWS/ElasticMapReduce"
+              Period             = 300
+              Statistic          = "AVERAGE"
+              Threshold          = 75.0
+              Unit               = "PERCENT"
               Dimensions = {
                 JobFlowId = "$${emr.clusterId}"
               }
@@ -200,15 +200,15 @@ resource "aws_emr_cluster" "cluster" {
     {
       Classification = "spark-defaults"
       Properties = {
-        "spark.sql.adaptive.enabled"                = "true"
+        "spark.sql.adaptive.enabled"                    = "true"
         "spark.sql.adaptive.coalescePartitions.enabled" = "true"
-        "spark.sql.adaptive.skewJoin.enabled"       = "true"
-        "spark.serializer"                          = "org.apache.spark.serializer.KryoSerializer"
-        "spark.sql.hive.metastorePartitionPruning"  = "true"
-        "spark.sql.execution.arrow.pyspark.enabled" = "true"
-        "spark.dynamicAllocation.enabled"           = "true"
-        "spark.dynamicAllocation.minExecutors"      = "1"
-        "spark.dynamicAllocation.maxExecutors"      = "10"
+        "spark.sql.adaptive.skewJoin.enabled"           = "true"
+        "spark.serializer"                              = "org.apache.spark.serializer.KryoSerializer"
+        "spark.sql.hive.metastorePartitionPruning"      = "true"
+        "spark.sql.execution.arrow.pyspark.enabled"     = "true"
+        "spark.dynamicAllocation.enabled"               = "true"
+        "spark.dynamicAllocation.minExecutors"          = "1"
+        "spark.dynamicAllocation.maxExecutors"          = "10"
       }
     },
     {

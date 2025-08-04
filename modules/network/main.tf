@@ -1,9 +1,3 @@
-variable "project_name" {
-  description = "Name of the project"
-  type        = string
-  default     = "my-emr-project"
-}
-
 resource "aws_vpc" "aws_vpc" {
   cidr_block = var.vpc_cidr
   tags = {
@@ -14,37 +8,37 @@ resource "aws_vpc" "aws_vpc" {
 }
 
 resource "aws_subnet" "private-subnet" {
-    count = length(var.private_subnets)
-   
-    vpc_id            = aws_vpc.aws_vpc.id
-    cidr_block        = var.private_subnets[count.index]
-    availability_zone = var.vpc_azs[count.index]
-    tags = {
-        Name = "private-${count.index + 1}"
-        Terraform = "true"
-        Environment = "dev"
-    }
+  count = length(var.private_subnets)
+
+  vpc_id            = aws_vpc.aws_vpc.id
+  cidr_block        = var.private_subnets[count.index]
+  availability_zone = var.vpc_azs[count.index]
+  tags = {
+    Name        = "private-${count.index + 1}"
+    Terraform   = "true"
+    Environment = "dev"
+  }
 }
 
 resource "aws_subnet" "public-subnet" {
-    count = length(var.public_subnets)
-    
-    vpc_id                  = aws_vpc.aws_vpc.id
-    cidr_block              = var.public_subnets[count.index]
-    availability_zone       = var.vpc_azs[count.index]
-    map_public_ip_on_launch = true 
-    tags = {
-        Name = "public-${count.index + 1}"
-        Terraform = "true"
-        Environment = "dev"
-    }
+  count = length(var.public_subnets)
+
+  vpc_id                  = aws_vpc.aws_vpc.id
+  cidr_block              = var.public_subnets[count.index]
+  availability_zone       = var.vpc_azs[count.index]
+  map_public_ip_on_launch = true
+  tags = {
+    Name        = "public-${count.index + 1}"
+    Terraform   = "true"
+    Environment = "dev"
+  }
 }
 
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.aws_vpc.id
   tags = {
-    Name = "${var.project_name}-igw"
-    Terraform = "true"
+    Name        = "${var.project_name}-igw"
+    Terraform   = "true"
     Environment = "dev"
   }
 }
@@ -65,7 +59,7 @@ resource "aws_nat_gateway" "nat" {
 # Route table untuk public subnet
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.aws_vpc.id
-  
+
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.igw.id
@@ -76,7 +70,7 @@ resource "aws_route_table" "public" {
 resource "aws_route_table" "private" {
   count  = length(var.private_subnets)
   vpc_id = aws_vpc.aws_vpc.id
-  
+
   route {
     cidr_block     = "0.0.0.0/0"
     nat_gateway_id = aws_nat_gateway.nat[count.index].id
@@ -107,18 +101,26 @@ resource "aws_security_group" "web" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
 }
 
 resource "aws_security_group" "emr_master_sg" {
   name_prefix = "${var.project_name}-${var.environment}-emr-master-"
-  vpc_id      = aws_vpc.emr_vpc.id
+  vpc_id      = aws_vpc.aws_vpc.id
 
   # SSH access
   ingress {
@@ -161,7 +163,7 @@ resource "aws_security_group" "emr_master_sg" {
 
 resource "aws_security_group" "emr_slave_sg" {
   name_prefix = "${var.project_name}-${var.environment}-emr-slave-"
-  vpc_id      = aws_vpc.emr_vpc.id
+  vpc_id      = aws_vpc.aws_vpc.id
 
   # Communication within cluster
   ingress {
@@ -173,9 +175,9 @@ resource "aws_security_group" "emr_slave_sg" {
 
   # Communication with master
   ingress {
-    from_port                = 0
-    to_port                  = 65535
-    protocol                 = "tcp"
+    from_port       = 0
+    to_port         = 65535
+    protocol        = "tcp"
     security_groups = [aws_security_group.emr_master_sg.id]
   }
 

@@ -1,13 +1,19 @@
+variable "project_name" {
+  description = "Name of the project"
+  type        = string
+  default     = "my-emr-project"
+}
+
 variable "vpc_name" {
   description = "Name of the VPC"
   type        = string
-  default     = "vpc-skripsi"  # Default value
+  default     = "vpc-skripsi" # Default value
 }
 
 variable "environment" {
   description = "Environment name"
   type        = string
-  default     = "dev"  
+  default     = "dev"
 }
 
 variable "vpc_cidr" {

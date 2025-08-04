@@ -1,6 +1,6 @@
 resource "aws_s3_bucket" "bucket" {
   bucket = "${var.project_name}-${var.environment}-emr-${random_string.bucket_suffix.result}"
-  
+
   tags = merge({
     Name        = vare.project_name
     Environment = var.environment
@@ -16,7 +16,7 @@ resource "random_string" "bucket_suffix" {
 
 resource "aws_s3_bucket_versioning" "bucket_versioning" {
   bucket = aws_s3_bucket.bucket.id
-  
+
   versioning_configuration {
     status = var.versioning_enabled ? "Enabled" : "Disabled"
   }

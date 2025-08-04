@@ -95,7 +95,7 @@ variable "public_access_block" {
     ignore_public_acls      = true
     restrict_public_buckets = true
   }
-  
+
 }
 
 variable "s3_lifecycle_rules" {
@@ -118,4 +118,99 @@ variable "kms_deletion_window" {
     condition     = var.kms_deletion_window >= 7 && var.kms_deletion_window <= 30
     error_message = "KMS deletion window must be between 7 and 30 days."
   }
+}
+
+
+# =============================================================================
+# EC2 VARIABLES
+# =============================================================================
+
+
+variable "instance_count" {
+  description = "Number of EC2 instances to create"
+  type        = number
+  default     = 1
+}
+
+variable "instance_type" {
+  description = "EC2 instance type"
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "ami_id" {
+  description = "AMI ID to use for the instance. If empty, will use latest Amazon Linux 2"
+  type        = string
+  default     = ""
+}
+
+variable "associate_public_ip" {
+  description = "Whether to associate a public IP address with the instance"
+  type        = bool
+  default     = true
+}
+
+variable "create_key_pair" {
+  description = "Whether to create a new key pair"
+  type        = bool
+  default     = false
+}
+
+variable "public_key" {
+  description = "Public key content for SSH access (required if create_key_pair is true)"
+  type        = string
+  default     = ""
+}
+
+variable "existing_key_name" {
+  description = "Name of existing key pair to use (required if create_key_pair is false)"
+  type        = string
+  default     = ""
+}
+
+variable "root_volume_type" {
+  description = "Root volume type"
+  type        = string
+  default     = "gp3"
+}
+variable "root_volume_size" {
+  description = "Size of root volume in GB"
+  type        = number
+  default     = 20
+}
+
+variable "delete_on_termination" {
+  description = "Whether to delete root volume on instance termination"
+  type        = bool
+  default     = true
+}
+
+variable "encrypt_root_volume" {
+  description = "Whether to encrypt the root volume"
+  type        = bool
+  default     = true
+}
+
+variable "additional_ebs_volumes" {
+  description = "List of additional EBS volumes to attach to the instance"
+  type = list(object({
+    device_name           = string
+    volume_type           = string
+    volume_size           = number
+    delete_on_termination = bool
+    encrypted             = bool
+  }))
+  default = []
+}
+
+variable "user_data_script" {
+  description = "User data script to run on instance startup"
+  type        = string
+  default     = "/scripts/pdds/redis/script.sh"
+}
+
+variable "create_eip" {
+  description = "Whether to create an Elastic IP for the instance"
+  type        = bool
+  default     = false
 }
