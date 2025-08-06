@@ -4,7 +4,7 @@ require_once 'vendor/autoload.php';
 // Redis connection with Predis
 $redis = new Predis\Client([
     'scheme' => 'tcp',
-    'host'   => '54.164.185.22',
+    'host'   => '54.153.34.27',
     'port'   => 6379,
 ]);
 
