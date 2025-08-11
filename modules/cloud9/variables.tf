@@ -1,3 +1,8 @@
+variable "project_name" {
+  description = "Name of the project"
+  type        = string
+}
+
 variable "environment_name" {
   description = "Name of the Cloud9 environment"
   type        = string
@@ -68,4 +73,29 @@ variable "tags" {
     Environment = "development"
     Project     = "my-project"
   }
+}
+
+variable "github_assignments" {
+  description = "GitHub assignments to download"
+  type = map(object({
+    repo   = string
+    branch = string
+    folder = string
+    files  = list(string)
+  }))
+  default = {
+    "redis-timeseries" = {
+      repo   = "HeyCW/skripsi"
+      branch = "main"
+      folder = "assignments/redis-timeseries"
+      files  = ["redis-timeseries.html", "redis-timeseries.php", "README.md"]
+    }
+  }
+}
+
+variable "private_key_path" {
+  description = "Path to the private key file for SSH access to the Cloud9 instance"
+  type        = string
+  default     = "private_key.pem"
+  
 }

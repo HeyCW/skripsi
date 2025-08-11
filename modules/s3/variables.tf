@@ -44,8 +44,8 @@ variable "server_side_encryption" {
   }
 }
 
-variable "lifecycle_rules" {
-  description = "List of lifecycle rules"
+variable "s3_lifecycle_rules" {
+  description = "S3 lifecycle rules configuration"
   type = list(object({
     id     = string
     status = string

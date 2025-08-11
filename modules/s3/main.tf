@@ -2,7 +2,7 @@ resource "aws_s3_bucket" "bucket" {
   bucket = "${var.project_name}-${var.environment}-emr-${random_string.bucket_suffix.result}"
 
   tags = merge({
-    Name        = vare.project_name
+    Name        = var.project_name
     Environment = var.environment
     ManagedBy   = "Terraform"
   }, var.additional_tags)
@@ -43,11 +43,11 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "bucket_encryption
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "this" {
-  count  = length(var.lifecycle_rules) > 0 ? 1 : 0
-  bucket = aws_s3_bucket.this.id
+  count  = length(var.s3_lifecycle_rules) > 0 ? 1 : 0
+  bucket = aws_s3_bucket.bucket.id
 
   dynamic "rule" {
-    for_each = var.lifecycle_rules
+    for_each = var.s3_lifecycle_rules
     content {
       id     = rule.value.id
       status = rule.value.status

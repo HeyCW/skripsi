@@ -100,14 +100,16 @@ variable "public_access_block" {
 
 variable "s3_lifecycle_rules" {
   description = "S3 lifecycle rules configuration"
-  type = object({
-    raw_data_to_ia_days       = optional(number, 30)
-    raw_data_to_glacier_days  = optional(number, 90)
-    processed_data_to_ia_days = optional(number, 60)
-    temp_data_expiry_days     = optional(number, 7)
-    logs_expiry_days          = optional(number, 90)
-  })
-  default = {}
+  type = list(object({
+    id     = string
+    status = string
+    transitions = list(object({
+      days          = number
+      storage_class = string
+    }))
+    expiration_days = number
+  }))
+  default = []
 }
 
 variable "kms_deletion_window" {

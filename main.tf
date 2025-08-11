@@ -24,17 +24,17 @@ module "network" {
   public_subnets  = var.public_subnets
 }
 
-# module "bucket" {
-#   source = "./modules/s3"
-#   project_name              = var.project_name
-#   environment                = var.environment
-#   versioning_enabled         = true
-#   public_access_block        = var.public_access_block
-#   server_side_encryption     = var.server_side_encryption
-#   lifecycle_rules            = var.s3_lifecycle_rules
-#   additional_tags            = var.additional_tags
+module "bucket" {
+  source = "./modules/s3"
+  project_name              = var.project_name
+  environment                = var.environment
+  versioning_enabled         = true
+  public_access_block        = var.public_access_block
+  server_side_encryption     = var.server_side_encryption
+  s3_lifecycle_rules         = var.s3_lifecycle_rules
+  additional_tags            = var.additional_tags
 
-# }
+}
 
 module "ec2" {
   source = "./modules/ec2"
@@ -64,6 +64,7 @@ module "ec2" {
 module "cloud9" {
   source = "./modules/cloud9"
 
+  project_name                =  var.project_name  
   environment_name            = var.cloud9_environment_name
   image_id                    = var.cloud9_image_id
   instance_type               = var.cloud9_instance_type
@@ -72,6 +73,39 @@ module "cloud9" {
   subnet_id                   = module.network.public_subnet_ids[0]
   tags                        = var.cloud9_tags
   
+}
+
+data "http" "redis_timeseries_php" {
+  url = "https://raw.githubusercontent.com/HeyCW/skripsi/main/testing/redis-timeseries.php"
+}
+
+data "http" "redis_timeseries_html" {
+  url = "https://raw.githubusercontent.com/HeyCW/skripsi/main/testing/redis-timeseries.html"
+}
+
+data "http" "redis_timeseries_readme" {
+  url = "https://raw.githubusercontent.com/HeyCW/skripsi/main/testing/README.md"
+}
+
+resource "aws_s3_object" "redis_timeseries_php" {
+  bucket       = module.bucket.bucket_id
+  key          = "redis-lab/redis-timeseries/redis-timeseries.php"
+  content      = data.http.redis_timeseries_php.response_body
+  content_type = "application/x-httpd-php"
+}
+
+resource "aws_s3_object" "redis_timeseries_html" {
+  bucket       = module.bucket.bucket_id
+  key          = "redis-lab/redis-timeseries/redis-timeseries.html"
+  content      = data.http.redis_timeseries_html.response_body
+  content_type = "text/html"
+}
+
+resource "aws_s3_object" "redis_timeseries_readme" {
+  bucket       = module.bucket.bucket_id
+  key          = "redis-lab/redis-timeseries/README.md"
+  content      = data.http.redis_timeseries_readme.response_body
+  content_type = "text/markdown"
 }
 
 # locals {
