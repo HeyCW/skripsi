@@ -41,6 +41,7 @@ module "ec2" {
 
   project_name           = var.project_name
   environment            = var.environment
+  aws_region             = var.aws_region
   vpc_id                 = module.network.vpc_id
   subnet_ids             = module.network.public_subnet_ids
   aws_sg_id              = module.network.web_sg_id
@@ -60,6 +61,18 @@ module "ec2" {
   create_eip             = var.create_eip
 }
 
+module "cloud9" {
+  source = "./modules/cloud9"
+
+  environment_name            = var.cloud9_environment_name
+  image_id                    = var.cloud9_image_id
+  instance_type               = var.cloud9_instance_type
+  description                 = var.cloud9_description
+  automatic_stop_time_minutes = var.cloud9_automatic_stop_time_minutes
+  subnet_id                   = module.network.public_subnet_ids[0]
+  tags                        = var.cloud9_tags
+  
+}
 
 # locals {
 #   # Debug user data script content

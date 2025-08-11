@@ -1,6 +1,5 @@
 # main.tf untuk EC2 module
 
-# Data source untuk mendapatkan AMI terbaru
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["amazon"]
@@ -13,6 +12,11 @@ data "aws_ami" "amazon_linux" {
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
+  }
+  
+  filter {
+    name   = "state"
+    values = ["available"]
   }
 }
 

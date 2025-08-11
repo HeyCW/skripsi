@@ -7,3 +7,8 @@ output "redis_endpoint" {
   description = "Redis endpoint"
   value       = module.ec2.public_ips[0]
 }
+
+output "cloud9_link" {
+  description = "Link to access the Cloud9 environment"
+  value       = module.cloud9.environment_url
+}

@@ -11,6 +11,12 @@ variable "environment" {
   default     = "dev"
 }
 
+variable "aws_region" {
+  description = "AWS region where resources will be created"
+  type        = string
+  default     = "us-east-1"
+}
+
 variable "vpc_id" {
   description = "VPC ID where EC2 instances will be created"
   type        = string
