@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>List of People</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 50px; }
+        table { border-collapse: collapse; width: 100%; max-width: 500px; }
+        th, td { border: 1px solid #333; padding: 10px; text-align: center; }
+        th { background-color: #f0f0f0; }
+        .buttons { margin: 20px 0; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        input[type="text"] { padding: 8px; margin: 10px; width: 200px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        
+        /* Additional styles for better UX */
+        .loading { opacity: 0.6; pointer-events: none; }
+        .error { color: red; font-size: 12px; margin: 5px 0; }
+        .success { color: green; font-size: 12px; margin: 5px 0; }
+        .status { font-size: 12px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PEOPLE</h1>
+       
+        <table id="peopleTable">
+            <thead>
+                <tr><th>PEOPLE</th></tr>
+            </thead>
+            <tbody id="peopleTableBody">
+                <!-- Will be populated by JavaScript -->
+                <tr><td>Loading...</td></tr>
+            </tbody>
+        </table>
+       
+        <div class="buttons">
+            <div style="display: inline-block;">
+                <input type="text" id="nameInput" placeholder="Enter name" required>
+                <br>
+                <button type="button" data-action="lpush">LPUSH</button>
+                <button type="button" data-action="lpop">LPOP</button>
+                <button type="button" data-action="rpop">RPOP</button>
+                <button type="button" data-action="rpush">RPUSH</button>
+            </div>
+            <div id="message" class="status"></div>
+        </div>
+       
+        <div id="statusInfo" class="status">
+            <small>Loading status...</small>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_URL = 'api.php'; // Backend API endpoint
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPeopleData();
+            setupButtonListeners();
+            
+            // Auto refresh every 3 seconds
+            setInterval(loadPeopleData, 3000);
+        });
+        
+        // Setup event listeners for buttons
+        function setupButtonListeners() {
+            const buttons = document.querySelectorAll('button[data-action]');
+            const nameInput = document.getElementById('nameInput');
+            
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const action = this.getAttribute('data-action');
+                    const name = nameInput.value.trim();
+                    
+                    handleAction(action, name);
+                });
+            });
+            
+            // Handle Enter key in input field
+            nameInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const name = this.value.trim();
+                    if (name) {
+                        handleAction('rpush', name); // Default to RPUSH
+                    }
+                }
+            });
+        }
+        
+        // Handle button actions
+        function handleAction(action, name) {
+            const nameInput = document.getElementById('nameInput');
+            const buttons = document.querySelectorAll('button');
+            
+            // Validation for push operations
+            if ((action === 'lpush' || action === 'rpush') && !name) {
+                showMessage('Please enter a name for push operations', 'error');
+                nameInput.focus();
+                return;
+            }
+            
+            // Disable buttons during request
+            buttons.forEach(btn => btn.classList.add('loading'));
+            showMessage('Processing...', 'loading');
+            
+            // Prepare request data
+            const requestData = { action: action };
+            if (name) {
+                requestData.name = name;
+            }
+            
+            // Send request to backend
+            fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    
+                    // Clear input after successful push
+                    if (action === 'lpush' || action === 'rpush') {
+                        nameInput.value = '';
+                    }
+                    
+                    // Reload data immediately
+                    loadPeopleData();
+                } else {
+                    showMessage(data.message || 'Operation failed', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('Error: ' + error.message, 'error');
+            })
+            .finally(() => {
+                // Re-enable buttons
+                buttons.forEach(btn => btn.classList.remove('loading'));
+            });
+        }
+        
+        // Load people data from backend
+        function loadPeopleData() {
+            fetch(API_URL)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    updateTable(data.data.people);
+                    updateStatus(data.data.list_length, data.data.redis_status);
+                } else {
+                    showMessage(data.error || 'Failed to load data', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading data:', error);
+                showMessage('Failed to connect to server', 'error');
+                updateTable([]); // Show empty table on error
+                updateStatus(0, 'Disconnected');
+            });
+        }
+        
+        // Update the people table
+        function updateTable(people) {
+            const tbody = document.getElementById('peopleTableBody');
+            tbody.innerHTML = '';
+            
+            if (people.length === 0) {
+                const row = tbody.insertRow();
+                const cell = row.insertCell(0);
+                cell.innerHTML = 'No people in list';
+                cell.style.fontStyle = 'italic';
+                cell.style.color = '#666';
+            } else {
+                people.forEach(person => {
+                    const row = tbody.insertRow();
+                    const cell = row.insertCell(0);
+                    cell.textContent = person;
+                });
+            }
+            
+            // Fill remaining rows to make 10 total
+            const currentRows = tbody.rows.length;
+            for (let i = currentRows; i < 10; i++) {
+                const row = tbody.insertRow();
+                const cell = row.insertCell(0);
+                cell.innerHTML = '&nbsp;';
+            }
+        }
+        
+        // Update status information
+        function updateStatus(listLength, redisStatus) {
+            const statusEl = document.getElementById('statusInfo');
+            statusEl.innerHTML = `
+                <small>
+                    List length: ${listLength} |
+                    Redis status: ${redisStatus}
+                </small>
+            `;
+        }
+        
+        // Show message to user
+        function showMessage(message, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = message;
+            messageEl.className = `status ${type}`;
+            
+            // Clear message after 3 seconds for success/error
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => {
+                    messageEl.textContent = '';
+                    messageEl.className = 'status';
+                }, 3000);
+            }
+        }
+        
+        // Handle network errors globally
+        window.addEventListener('online', function() {
+            showMessage('Connection restored', 'success');
+            loadPeopleData();
+        });
+        
+        window.addEventListener('offline', function() {
+            showMessage('Connection lost', 'error');
+        });
+    </script>
+</body>
+</html>
