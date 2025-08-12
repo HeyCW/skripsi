@@ -75,37 +75,16 @@ module "cloud9" {
   
 }
 
-data "http" "redis_timeseries_php" {
-  url = "https://raw.githubusercontent.com/HeyCW/skripsi/main/testing/redis-timeseries.php"
+data "http" "setup" {
+  url = "https://raw.githubusercontent.com/HeyCW/skripsi/refs/heads/main/assignments/redis-lab/redis-timeseries/setup.sh"
 }
 
-data "http" "redis_timeseries_html" {
-  url = "https://raw.githubusercontent.com/HeyCW/skripsi/main/testing/redis-timeseries.html"
-}
 
-data "http" "redis_timeseries_readme" {
-  url = "https://raw.githubusercontent.com/HeyCW/skripsi/main/testing/README.md"
-}
-
-resource "aws_s3_object" "redis_timeseries_php" {
+resource "aws_s3_object" "setup" {
   bucket       = module.bucket.bucket_id
-  key          = "redis-lab/redis-timeseries/redis-timeseries.php"
-  content      = data.http.redis_timeseries_php.response_body
+  key          = "redis-lab/redis-timeseries/setup.sh"
+  content      = data.http.setup.response_body
   content_type = "application/x-httpd-php"
-}
-
-resource "aws_s3_object" "redis_timeseries_html" {
-  bucket       = module.bucket.bucket_id
-  key          = "redis-lab/redis-timeseries/redis-timeseries.html"
-  content      = data.http.redis_timeseries_html.response_body
-  content_type = "text/html"
-}
-
-resource "aws_s3_object" "redis_timeseries_readme" {
-  bucket       = module.bucket.bucket_id
-  key          = "redis-lab/redis-timeseries/README.md"
-  content      = data.http.redis_timeseries_readme.response_body
-  content_type = "text/markdown"
 }
 
 # locals {

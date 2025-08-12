@@ -8,11 +8,6 @@ output "redis_endpoint" {
   value       = module.ec2.public_ips[0]
 }
 
-output "bucket_name" {
-  description = "The name of the S3 bucket"
-  value       = module.bucket.bucket_name
-}
-
 output "cloud9_link" {
   description = "Link to access the Cloud9 environment"
   value       = module.cloud9.environment_url
