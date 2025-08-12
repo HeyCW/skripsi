@@ -17,6 +17,7 @@
         .error { color: red; font-size: 12px; margin: 5px 0; }
         .success { color: green; font-size: 12px; margin: 5px 0; }
         .status { font-size: 12px; margin-top: 10px; }
+        .debug { background: #f5f5f5; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -48,19 +49,25 @@
         <div id="statusInfo" class="status">
             <small>Loading status...</small>
         </div>
+        
+        <div id="debugInfo" class="debug" style="display: none;">
+            <strong>Debug Info:</strong>
+            <pre id="debugContent"></pre>
+        </div>
     </div>
 
     <script>
         // Configuration
-        const API_URL = 'api.php'; // Backend API endpoint
+        const API_URL = 'redis-list.php'; // Backend API endpoint
+        let debugMode = false; // Set to true for debugging
         
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             loadPeopleData();
             setupButtonListeners();
             
-            // Auto refresh every 3 seconds
-            setInterval(loadPeopleData, 3000);
+            // Auto refresh every 5 seconds (increased from 3)
+            setInterval(loadPeopleData, 5000);
         });
         
         // Setup event listeners for buttons
@@ -119,10 +126,23 @@
                 body: JSON.stringify(requestData)
             })
             .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
+                // Get response text first to debug
+                return response.text().then(text => {
+                    if (debugMode) {
+                        showDebugInfo('Response Text:', text);
+                    }
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}, response: ${text}`);
+                    }
+                    
+                    // Try to parse as JSON
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        throw new Error(`Invalid JSON response: ${text.substring(0, 200)}...`);
+                    }
+                });
             })
             .then(data => {
                 if (data.success) {
@@ -142,6 +162,9 @@
             .catch(error => {
                 console.error('Error:', error);
                 showMessage('Error: ' + error.message, 'error');
+                if (debugMode) {
+                    showDebugInfo('Error:', error.message);
+                }
             })
             .finally(() => {
                 // Re-enable buttons
@@ -151,12 +174,30 @@
         
         // Load people data from backend
         function loadPeopleData() {
-            fetch(API_URL)
+            fetch(API_URL + '?action=get')  // Add query parameter for GET requests
             .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
+                // Get response text first to debug
+                return response.text().then(text => {
+                    if (debugMode) {
+                        showDebugInfo('Load Response:', text);
+                    }
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}, response: ${text}`);
+                    }
+                    
+                    // Check if response is empty
+                    if (!text.trim()) {
+                        throw new Error('Empty response from server');
+                    }
+                    
+                    // Try to parse as JSON
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        throw new Error(`Invalid JSON response: ${text.substring(0, 200)}...`);
+                    }
+                });
             })
             .then(data => {
                 if (data.success) {
@@ -168,9 +209,13 @@
             })
             .catch(error => {
                 console.error('Error loading data:', error);
-                showMessage('Failed to connect to server', 'error');
+                showMessage('Failed to connect to server: ' + error.message, 'error');
                 updateTable([]); // Show empty table on error
                 updateStatus(0, 'Disconnected');
+                
+                if (debugMode) {
+                    showDebugInfo('Load Error:', error.message);
+                }
             });
         }
         
@@ -219,14 +264,32 @@
             messageEl.textContent = message;
             messageEl.className = `status ${type}`;
             
-            // Clear message after 3 seconds for success/error
+            // Clear message after 5 seconds for success/error
             if (type === 'success' || type === 'error') {
                 setTimeout(() => {
                     messageEl.textContent = '';
                     messageEl.className = 'status';
-                }, 3000);
+                }, 5000);
             }
         }
+        
+        // Show debug information
+        function showDebugInfo(title, content) {
+            const debugEl = document.getElementById('debugInfo');
+            const debugContent = document.getElementById('debugContent');
+            debugContent.textContent = `${title}\n${content}`;
+            debugEl.style.display = 'block';
+        }
+        
+        // Toggle debug mode (you can call this from browser console)
+        window.toggleDebug = function() {
+            debugMode = !debugMode;
+            const debugEl = document.getElementById('debugInfo');
+            if (!debugMode) {
+                debugEl.style.display = 'none';
+            }
+            console.log('Debug mode:', debugMode ? 'ON' : 'OFF');
+        };
         
         // Handle network errors globally
         window.addEventListener('online', function() {
