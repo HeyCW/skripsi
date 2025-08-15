@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   mongodb:
     image: mongo:7.0
@@ -10,8 +12,55 @@ services:
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
+      - ./data:/import
+      - ./init-scripts:/docker-entrypoint-initdb.d
     networks:
       - mongodb_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Data importer service (runs once then exits)
+  data-importer:
+    image: mongo:7.0
+    container_name: data-importer
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./data:/import
+    networks:
+      - mongodb_network
+    command: |
+      bash -c "
+        echo '🔄 Starting data import process...'
+        
+        # Wait a bit more to ensure MongoDB is fully ready
+        sleep 5
+        
+        # Check if data already exists
+        COUNT=$$(mongosh --host mongodb:27017 --quiet --eval 'use restaurant_db; db.restaurants.countDocuments()' 2>/dev/null | tail -n1)
+        
+        if [ \"$$COUNT\" -gt 0 ] 2>/dev/null; then
+          echo '✅ Data already exists ($$COUNT documents). Skipping import.'
+        else
+          echo '📤 Importing restaurant data...'
+          mongoimport --host mongodb:27017 --db restaurant_db --collection restaurants --file /import/restaurants.jsonl --drop --verbose
+          
+          if [ $$? -eq 0 ]; then
+            NEW_COUNT=$$(mongosh --host mongodb:27017 --quiet --eval 'use restaurant_db; db.restaurants.countDocuments()' 2>/dev/null | tail -n1)
+            echo '🎉 Import successful! Total documents: $$NEW_COUNT'
+          else
+            echo '❌ Import failed!'
+            exit 1
+          fi
+        fi
+        
+        echo '✅ Data import process completed!'
+      "
+    restart: "no"  # Only run once
 
   mongo-express:
     image: mongo-express:1.0.0
@@ -24,7 +73,8 @@ services:
       ME_CONFIG_BASICAUTH_USERNAME: admin
       ME_CONFIG_BASICAUTH_PASSWORD: mypass123
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     networks:
       - mongodb_network
 

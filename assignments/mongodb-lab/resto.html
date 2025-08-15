@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Data Table</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .controls {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: white;
+        }
+        
+        .stats {
+            background: #e3f2fd;
+            padding: 15px 20px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+        
+        .stat-number {
+            background: #2196f3;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.9em;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        th {
+            background: #343a40;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-right: 1px solid #495057;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+        
+        th:hover {
+            background: #495057;
+        }
+        
+        th.sortable::after {
+            content: ' ↕';
+            opacity: 0.5;
+            font-size: 0.8em;
+        }
+        
+        th.sort-asc::after {
+            content: ' ↑';
+            opacity: 1;
+            color: #ffc107;
+        }
+        
+        th.sort-desc::after {
+            content: ' ↓';
+            opacity: 1;
+            color: #ffc107;
+        }
+        
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #dee2e6;
+            border-right: 1px solid #dee2e6;
+            vertical-align: top;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        tr:hover {
+            background-color: #e3f2fd;
+        }
+        
+        .restaurant-name {
+            font-weight: 600;
+            color: #2c3e50;
+            max-width: 200px;
+            word-wrap: break-word;
+        }
+        
+        .borough {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 500;
+            color: white;
+        }
+        
+        .borough.bronx { background: #e74c3c; }
+        .borough.brooklyn { background: #3498db; }
+        .borough.manhattan { background: #2ecc71; }
+        .borough.queens { background: #f39c12; }
+        .borough.staten-island { background: #9b59b6; }
+        
+        .cuisine {
+            font-style: italic;
+            color: #6c757d;
+        }
+        
+        .address {
+            font-size: 0.9em;
+            color: #6c757d;
+            max-width: 250px;
+            word-wrap: break-word;
+        }
+        
+        .grades {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            max-width: 150px;
+        }
+        
+        .grade-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            color: white;
+            margin: 1px;
+            min-width: 35px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        
+        .grade-a { background: linear-gradient(135deg, #28a745, #20c997); }
+        .grade-b { background: linear-gradient(135deg, #ffc107, #fd7e14); color: #212529; }
+        .grade-c { background: linear-gradient(135deg, #fd7e14, #dc3545); }
+        .grade-p { background: linear-gradient(135deg, #6c757d, #495057); }
+        .grade-z { background: linear-gradient(135deg, #dc3545, #bd2130); }
+        .grade-other { background: linear-gradient(135deg, #6f42c1, #495057); }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #6c757d;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .pagination {
+            padding: 20px;
+            text-align: center;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .pagination button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: 1px solid #007bff;
+            background: white;
+            color: #007bff;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .pagination button:hover:not(:disabled) {
+            background: #007bff;
+            color: white;
+        }
+        
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .pagination button.active {
+            background: #007bff;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 5px;
+            }
+            
+            .header {
+                padding: 20px 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .header p {
+                font-size: 0.9em;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+                padding: 15px;
+            }
+            
+            .search-box {
+                min-width: auto;
+                order: 1;
+            }
+            
+            .search-box input {
+                font-size: 16px; /* Prevent zoom on iOS */
+                padding: 12px 15px;
+            }
+            
+            .filter-group {
+                width: 100%;
+                justify-content: space-between;
+                gap: 8px;
+            }
+            
+            .filter-group:nth-child(2) {
+                order: 2; /* Borough */
+            }
+            
+            .filter-group:nth-child(3) {
+                order: 3; /* Cuisine */
+            }
+            
+            .filter-group:nth-child(4) {
+                order: 4; /* Score */
+            }
+            
+            .filter-group label {
+                min-width: 70px;
+                font-size: 0.9em;
+                font-weight: 600;
+            }
+            
+            .filter-group select {
+                flex: 1;
+                padding: 10px 8px;
+                font-size: 14px;
+            }
+            
+            .filter-group input[type="number"] {
+                width: 80px !important;
+                padding: 10px 8px !important;
+                font-size: 14px;
+            }
+            
+            .filter-group small {
+                font-size: 0.7em;
+                white-space: nowrap;
+            }
+            
+            .stats {
+                flex-direction: row;
+                gap: 15px;
+                padding: 12px 15px;
+                justify-content: space-around;
+            }
+            
+            .stat-item {
+                gap: 5px;
+                font-size: 0.85em;
+            }
+            
+            .stat-number {
+                font-size: 0.8em;
+                padding: 3px 6px;
+            }
+            
+            .table-container {
+                max-height: 60vh;
+                font-size: 12px;
+            }
+            
+            table {
+                min-width: 700px; /* Force horizontal scroll for better readability */
+            }
+            
+            th, td {
+                padding: 6px 4px;
+                font-size: 11px;
+            }
+            
+            th {
+                font-size: 10px;
+                padding: 8px 4px;
+            }
+            
+            .restaurant-name {
+                max-width: 120px;
+                font-size: 11px;
+                line-height: 1.3;
+            }
+            
+            .borough {
+                font-size: 0.7em;
+                padding: 2px 6px;
+            }
+            
+            .cuisine {
+                font-size: 10px;
+                max-width: 80px;
+                word-wrap: break-word;
+            }
+            
+            .address {
+                font-size: 9px;
+                max-width: 150px;
+                line-height: 1.2;
+            }
+            
+            .grades {
+                max-width: 100px;
+                gap: 2px;
+            }
+            
+            .grade-badge {
+                font-size: 0.65em;
+                padding: 2px 4px;
+                min-width: 25px;
+                margin: 1px;
+            }
+            
+            .pagination {
+                padding: 15px;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .pagination button {
+                padding: 10px 12px;
+                font-size: 14px;
+                touch-action: manipulation; /* Better touch response */
+            }
+            
+            #pageInfo {
+                order: 3;
+                width: 100%;
+                text-align: center;
+                margin-top: 8px;
+                font-size: 0.9em;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+            
+            .controls {
+                padding: 12px;
+            }
+            
+            .filter-group {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 5px;
+            }
+            
+            .filter-group label {
+                min-width: auto;
+            }
+            
+            .filter-group select,
+            .filter-group input {
+                width: 100% !important;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 8px;
+                align-items: center;
+            }
+            
+            .stat-item {
+                justify-content: center;
+            }
+            
+            table {
+                min-width: 600px;
+            }
+            
+            th, td {
+                padding: 4px 2px;
+            }
+            
+            .restaurant-name {
+                max-width: 100px;
+            }
+            
+            .address {
+                max-width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍽️ Restaurant Data Table</h1>
+            <p>Comprehensive view of all restaurant data</p>
+        </div>
+        
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Search restaurants, cuisine, or address...">
+            </div>
+            
+            <div class="filter-group">
+                <label style="margin-left: 50px;">Borough:</label>
+                <select id="boroughFilter">
+                    <option value="">All Boroughs</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Cuisine:</label>
+                <select id="cuisineFilter">
+                    <option value="">All Cuisines</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Latest Score (Less than):</label>
+                <input type="number" id="scoreFilter" placeholder="e.g. 30" min="0" max="100" style="width: 80px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 5px;">
+                <small style="color: #6c757d; font-size: 0.8em;">Latest grade only</small>
+            </div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                📊 Total: <span class="stat-number" id="totalCount">-</span>
+            </div>
+            <div class="stat-item">
+                📍 Filtered: <span class="stat-number" id="filteredCount">-</span>
+            </div>
+            <div class="stat-item">
+                👁️ Displayed: <span class="stat-number" id="displayedCount">-</span>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                Loading restaurant data...
+            </div>
+            
+            <table id="restaurantTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th class="sortable" data-column="name">Restaurant Name</th>
+                        <th class="sortable" data-column="borough">Borough</th>
+                        <th class="sortable" data-column="cuisine">Cuisine</th>
+                        <th data-column="address">Address</th>
+                        <th class="sortable" data-column="restaurant_id">ID</th>
+                        <th data-column="grades">Latest Grades</th>
+                    </tr>
+                </thead>
+                <tbody id="restaurantTableBody">
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="pagination" id="pagination" style="display: none;">
+            <button id="prevPage">← Previous</button>
+            <span id="pageInfo"></span>
+            <button id="nextPage">Next →</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = 'resto.php';
+        const ITEMS_PER_PAGE = 50;
+        
+        // Global variables
+        let allRestaurants = [];
+        let filteredRestaurants = [];
+        let currentPage = 1;
+        let sortColumn = null;
+        let sortDirection = 'asc';
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllData();
+            setupEventListeners();
+        });
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Search input
+            document.getElementById('searchInput').addEventListener('input', debounce(filterAndDisplay, 300));
+            
+            // Filter selects
+            document.getElementById('boroughFilter').addEventListener('change', filterAndDisplay);
+            document.getElementById('cuisineFilter').addEventListener('change', filterAndDisplay);
+            document.getElementById('scoreFilter').addEventListener('input', debounce(filterAndDisplay, 300));
+            
+            // Pagination
+            document.getElementById('prevPage').addEventListener('click', () => changePage(-1));
+            document.getElementById('nextPage').addEventListener('click', () => changePage(1));
+            
+            // Table sorting
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.addEventListener('click', () => sortTable(th.dataset.column));
+            });
+        }
+        
+        // Load all restaurant data
+        async function loadAllData() {
+            try {
+                // First, get all restaurants using a special endpoint that returns all data
+                const response = await fetch(`${API_BASE}?action=all-restaurants`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to load data');
+                }
+                
+                allRestaurants = data.data;
+                setupFilters();
+                filterAndDisplay();
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('restaurantTable').style.display = 'table';
+                document.getElementById('pagination').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('loading').innerHTML = 
+                    `<div class="error">❌ Error loading data: ${error.message}</div>`;
+            }
+        }
+        
+        // Setup filter options
+        function setupFilters() {
+            // Get unique boroughs
+            const boroughs = [...new Set(allRestaurants.map(r => r.borough).filter(Boolean))].sort();
+            const boroughSelect = document.getElementById('boroughFilter');
+            boroughs.forEach(borough => {
+                const option = document.createElement('option');
+                option.value = borough;
+                option.textContent = borough;
+                boroughSelect.appendChild(option);
+            });
+            
+            // Get unique cuisines
+            const cuisines = [...new Set(allRestaurants.map(r => r.cuisine).filter(Boolean))].sort();
+            const cuisineSelect = document.getElementById('cuisineFilter');
+            cuisines.forEach(cuisine => {
+                const option = document.createElement('option');
+                option.value = cuisine;
+                option.textContent = cuisine;
+                cuisineSelect.appendChild(option);
+            });
+        }
+        
+        // Filter and display data
+        function filterAndDisplay() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const boroughFilter = document.getElementById('boroughFilter').value;
+            const cuisineFilter = document.getElementById('cuisineFilter').value;
+            const maxScore = document.getElementById('scoreFilter').value;
+            
+            filteredRestaurants = allRestaurants.filter(restaurant => {
+                // Search filter
+                if (searchTerm) {
+                    const searchableText = [
+                        restaurant.name,
+                        restaurant.cuisine,
+                        restaurant.borough,
+                        restaurant.address?.street,
+                        restaurant.address?.zipcode
+                    ].filter(Boolean).join(' ').toLowerCase();
+                    
+                    if (!searchableText.includes(searchTerm)) {
+                        return false;
+                    }
+                }
+                
+                // Borough filter
+                if (boroughFilter && restaurant.borough !== boroughFilter) {
+                    return false;
+                }
+                
+                // Cuisine filter
+                if (cuisineFilter && restaurant.cuisine !== cuisineFilter) {
+                    return false;
+                }
+                
+                // Score filter (show restaurants with latest score <= maxScore)
+                if (maxScore && maxScore.trim() !== '') {
+                    const maxScoreNum = Number(maxScore);
+                    if (!isNaN(maxScoreNum)) {
+                        // Get the latest grade (already sorted by date)
+                        if (restaurant.grades && restaurant.grades.length > 0) {
+                            // Sort grades to get the latest one
+                            const sortedGrades = [...restaurant.grades].sort((a, b) => {
+                                if (a.date && b.date) {
+                                    const dateA = new Date(a.date);
+                                    const dateB = new Date(b.date);
+                                    return dateB.getTime() - dateA.getTime(); // Newest first
+                                }
+                                return 0;
+                            });
+                            
+                            const latestGrade = sortedGrades[0];
+                            if (latestGrade && latestGrade.score !== undefined && latestGrade.score !== null) {
+                                const latestScore = Number(latestGrade.score);
+                                if (latestScore > maxScoreNum) {
+                                    return false; // Latest score is higher than filter, exclude this restaurant
+                                }
+                            } else {
+                                return false; // No score in latest grade, exclude this restaurant
+                            }
+                        } else {
+                            return false; // No grades at all, exclude this restaurant
+                        }
+                    }
+                }
+                
+                return true;
+            });
+            
+            currentPage = 1;
+            displayTable();
+            updateStats();
+        }
+        
+        // Display table
+        function displayTable() {
+            const start = (currentPage - 1) * ITEMS_PER_PAGE;
+            const end = start + ITEMS_PER_PAGE;
+            const pageData = filteredRestaurants.slice(start, end);
+            
+            const tbody = document.getElementById('restaurantTableBody');
+            tbody.innerHTML = '';
+            
+            pageData.forEach(restaurant => {
+                const row = createTableRow(restaurant);
+                tbody.appendChild(row);
+            });
+            
+            updatePagination();
+        }
+        
+        // Create table row
+        function createTableRow(restaurant) {
+            const tr = document.createElement('tr');
+            
+            // Restaurant name
+            const nameCell = document.createElement('td');
+            nameCell.className = 'restaurant-name';
+            nameCell.textContent = restaurant.name || 'N/A';
+            tr.appendChild(nameCell);
+            
+            // Borough
+            const boroughCell = document.createElement('td');
+            if (restaurant.borough) {
+                const boroughSpan = document.createElement('span');
+                boroughSpan.className = `borough ${restaurant.borough.toLowerCase().replace(' ', '-')}`;
+                boroughSpan.textContent = restaurant.borough;
+                boroughCell.appendChild(boroughSpan);
+            } else {
+                boroughCell.textContent = 'N/A';
+            }
+            tr.appendChild(boroughCell);
+            
+            // Cuisine
+            const cuisineCell = document.createElement('td');
+            cuisineCell.className = 'cuisine';
+            cuisineCell.textContent = restaurant.cuisine || 'N/A';
+            tr.appendChild(cuisineCell);
+            
+            // Address
+            const addressCell = document.createElement('td');
+            addressCell.className = 'address';
+            if (restaurant.address) {
+                const addressParts = [];
+                if (restaurant.address.building) addressParts.push(restaurant.address.building);
+                if (restaurant.address.street) addressParts.push(restaurant.address.street);
+                if (restaurant.address.zipcode) addressParts.push(restaurant.address.zipcode);
+                addressCell.textContent = addressParts.join(', ') || 'N/A';
+            } else {
+                addressCell.textContent = 'N/A';
+            }
+            tr.appendChild(addressCell);
+            
+            // Restaurant ID
+            const idCell = document.createElement('td');
+            idCell.textContent = restaurant.restaurant_id || 'N/A';
+            tr.appendChild(idCell);
+            
+            // Grades
+            const gradesCell = document.createElement('td');
+            if (restaurant.grades && restaurant.grades.length > 0) {
+                const gradesDiv = document.createElement('div');
+                gradesDiv.className = 'grades';
+                
+                // Sort grades by date (newest first) then by score (highest first)
+                const sortedGrades = [...restaurant.grades].sort((a, b) => {
+                    // First sort by date (if available)
+                    if (a.date && b.date) {
+                        const dateA = new Date(a.date);
+                        const dateB = new Date(b.date);
+                        if (dateA.getTime() !== dateB.getTime()) {
+                            return dateB.getTime() - dateA.getTime(); // Newest first
+                        }
+                    }
+                    
+                    // If dates are same or missing, sort by score (highest first)
+                    if (a.score && b.score) {
+                        return b.score - a.score; // Highest score first
+                    }
+                    
+                    // If no score, sort by grade (A, B, C, P, Z)
+                    if (a.grade && b.grade) {
+                        const gradeOrder = { 'A': 1, 'B': 2, 'C': 3, 'P': 4, 'Z': 5 };
+                        return (gradeOrder[a.grade] || 99) - (gradeOrder[b.grade] || 99);
+                    }
+                    
+                    return 0;
+                });
+                
+                // Show latest/best 3 grades with score
+                sortedGrades.slice(0, 3).forEach((grade, index) => {
+                    if (grade.grade) {
+                        const gradeBadge = document.createElement('span');
+                        gradeBadge.className = `grade-badge grade-${grade.grade.toLowerCase()}`;
+                        
+                        // Display grade with score
+                        let badgeText = grade.grade;
+                        if (grade.score !== undefined && grade.score !== null) {
+                            badgeText += `/${grade.score}`;
+                        }
+                        gradeBadge.textContent = badgeText;
+                        
+                        // Enhanced tooltip with score interpretation
+                        const tooltipParts = [];
+                        if (index === 0) {
+                            tooltipParts.push('Latest/Best');
+                        }
+                        tooltipParts.push(`Grade: ${grade.grade}`);
+                        if (grade.score !== undefined && grade.score !== null) {
+                            tooltipParts.push(`Score: ${grade.score}`);
+                            
+                            // Add score interpretation
+                            const score = Number(grade.score);
+                            if (score <= 10) tooltipParts.push('(Excellent)');
+                            else if (score <= 20) tooltipParts.push('(Very Good)');
+                            else if (score <= 30) tooltipParts.push('(Good)');
+                            else if (score <= 50) tooltipParts.push('(Fair)');
+                            else if (score <= 70) tooltipParts.push('(Poor)');
+                            else tooltipParts.push('(Very Poor)');
+                        }
+                        if (grade.date) {
+                            const date = new Date(grade.date);
+                            if (!isNaN(date.getTime())) {
+                                tooltipParts.push(`Date: ${date.toLocaleDateString()}`);
+                            }
+                        }
+                        
+                        gradeBadge.title = tooltipParts.join(' | ');
+                        
+                        // Add visual indicator for latest grade
+                        if (index === 0) {
+                            gradeBadge.style.border = '2px solid #ffd700';
+                            gradeBadge.style.fontWeight = 'bold';
+                            gradeBadge.style.transform = 'scale(1.05)';
+                        }
+                        
+                        gradesDiv.appendChild(gradeBadge);
+                    }
+                });
+                
+                // Show total grade count if more than 3
+                if (restaurant.grades.length > 3) {
+                    const moreIndicator = document.createElement('span');
+                    moreIndicator.className = 'grade-badge';
+                    moreIndicator.style.background = '#6c757d';
+                    moreIndicator.style.fontSize = '0.7em';
+                    moreIndicator.textContent = `+${restaurant.grades.length - 3}`;
+                    moreIndicator.title = `${restaurant.grades.length} total grades`;
+                    gradesDiv.appendChild(moreIndicator);
+                }
+                
+                gradesCell.appendChild(gradesDiv);
+            } else {
+                gradesCell.textContent = 'No grades';
+            }
+            tr.appendChild(gradesCell);
+            
+            return tr;
+        }
+        
+        // Sort table
+        function sortTable(column) {
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+            
+            // Update header classes
+            document.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            const header = document.querySelector(`th[data-column="${column}"]`);
+            header.classList.add(`sort-${sortDirection}`);
+            
+            // Sort data
+            filteredRestaurants.sort((a, b) => {
+                let aVal = getNestedValue(a, column) || '';
+                let bVal = getNestedValue(b, column) || '';
+                
+                // Convert to string for comparison
+                aVal = aVal.toString().toLowerCase();
+                bVal = bVal.toString().toLowerCase();
+                
+                if (sortDirection === 'asc') {
+                    return aVal.localeCompare(bVal);
+                } else {
+                    return bVal.localeCompare(aVal);
+                }
+            });
+            
+            currentPage = 1;
+            displayTable();
+        }
+        
+        // Get nested object value
+        function getNestedValue(obj, path) {
+            return path.split('.').reduce((current, key) => current && current[key], obj);
+        }
+        
+        // Update pagination
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredRestaurants.length / ITEMS_PER_PAGE);
+            
+            document.getElementById('prevPage').disabled = currentPage <= 1;
+            document.getElementById('nextPage').disabled = currentPage >= totalPages;
+            document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+        }
+        
+        // Change page
+        function changePage(direction) {
+            const totalPages = Math.ceil(filteredRestaurants.length / ITEMS_PER_PAGE);
+            const newPage = currentPage + direction;
+            
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                displayTable();
+            }
+        }
+        
+        // Update statistics
+        function updateStats() {
+            document.getElementById('totalCount').textContent = allRestaurants.length.toLocaleString();
+            document.getElementById('filteredCount').textContent = filteredRestaurants.length.toLocaleString();
+            
+            const displayed = Math.min(ITEMS_PER_PAGE, filteredRestaurants.length - (currentPage - 1) * ITEMS_PER_PAGE);
+            document.getElementById('displayedCount').textContent = Math.max(0, displayed);
+        }
+        
+        // Debounce function
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    </script>
+</body>
+</html>

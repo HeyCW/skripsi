@@ -3,297 +3,351 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Set content type to HTML
-header('Content-Type: text/html; charset=utf-8');
+// Set content type to JSON
+header('Content-Type: application/json; charset=utf-8');
+
+// Enable CORS if needed
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
+// Handle OPTIONS request for CORS preflight
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit(0);
+}
+
+// Response helper function
+function sendResponse($success, $data = null, $error = null) {
+    echo json_encode([
+        'success' => $success,
+        'data' => $data,
+        'error' => $error,
+        'timestamp' => date('Y-m-d H:i:s')
+    ]);
+    exit;
+}
 
 try {
     // Load Composer autoloader
     require_once 'vendor/autoload.php';
     
-    // Connect to MongoDB
-    $client = new MongoDB\Client();
-    // Alternative connection: $client = new MongoDB\Client('mongodb://192.168.38.200:27017');
+    // Connect to MongoDB with correct connection string
+    $client = new MongoDB\Client('mongodb://localhost:27017');
     
-    // Select database and collection
-    $resto = $client->hnp->restaurants;
+    // Select database and collection (corrected to restaurant_db)
+    $resto = $client->selectDatabase('restaurant_db')->selectCollection('restaurants');
     
-    // Test connection
-    $client->selectDatabase('admin')->command(['ping' => 1]);
+    // Get the requested action
+    $action = $_GET['action'] ?? '';
     
-} catch (Exception $e) {
-    die('<div class="error">Connection failed: ' . htmlspecialchars($e->getMessage()) . '</div>');
-}
-?>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restaurant Data Analysis</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1, h2 {
-            color: #333;
-            border-bottom: 3px solid #007bff;
-            padding-bottom: 10px;
-        }
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .section {
-            margin-bottom: 40px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background-color: #fafafa;
-        }
-        .borough-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        .borough-item {
-            background-color: #007bff;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-        }
-        .restaurant {
-            background: white;
-            margin: 15px 0;
-            padding: 15px;
-            border-left: 4px solid #28a745;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .restaurant-field {
-            margin: 5px 0;
-            padding: 3px 0;
-        }
-        .field-name {
-            font-weight: bold;
-            color: #495057;
-            display: inline-block;
-            min-width: 120px;
-        }
-        .field-value {
-            color: #6c757d;
-        }
-        .grades {
-            margin: 10px 0;
-            padding: 10px;
-            background-color: #e9ecef;
-            border-radius: 5px;
-        }
-        .grade-item {
-            background: white;
-            margin: 5px 0;
-            padding: 8px;
-            border-radius: 3px;
-            border-left: 3px solid #ffc107;
-        }
-        .high-score {
-            border-left-color: #dc3545;
-        }
-        .count {
-            background-color: #17a2b8;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.9em;
-            margin-left: 10px;
-        }
-        .error {
-            color: #dc3545;
-            background-color: #f8d7da;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-        .success {
-            color: #155724;
-            background-color: #d4edda;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🍽️ Restaurant Data Analysis</h1>
-        
-        <div class="success">
-            ✅ Successfully connected to MongoDB database!
-        </div>
-
-        <!-- Section 1: Borough List -->
-        <div class="section">
-            <h2>📍 Available Boroughs</h2>
-            <?php
+    switch ($action) {
+        case 'ping':
+            // Test connection
+            $client->selectDatabase('admin')->command(['ping' => 1]);
+            sendResponse(true, ['message' => 'Database connection successful']);
+            break;
+            
+        case 'count':
+            // Count total restaurants
             try {
-                $cursor = $resto->distinct('borough');
-                $boroughCount = 0;
-                
-                echo '<div class="borough-list">';
-                foreach ($cursor as $borough) {
-                    if (!empty($borough)) {
-                        echo '<span class="borough-item">' . htmlspecialchars($borough) . '</span>';
-                        $boroughCount++;
-                    }
-                }
-                echo '</div>';
-                echo '<p><strong>Total Boroughs:</strong> <span class="count">' . $boroughCount . '</span></p>';
-                
+                $count = $resto->countDocuments();
+                sendResponse(true, ['total_restaurants' => $count]); // ← Fixed: send $count not $client
             } catch (Exception $e) {
-                echo '<div class="error">Error fetching boroughs: ' . htmlspecialchars($e->getMessage()) . '</div>';
+                sendResponse(false, null, 'Error counting restaurants: ' . $e->getMessage());
             }
-            ?>
-        </div>
-
-        <!-- Section 2: Staten Island Restaurants -->
-        <div class="section">
-            <h2>🏝️ Restaurants in Staten Island</h2>
-            <?php
+            break;
+            
+        case 'sample':
+            // Get sample restaurant
             try {
-                $cursor = $resto->find(
-                    ['borough' => 'Staten Island'],
-                    [
-                        'projection' => ['_id' => 0],
-                        'limit' => 10 // Limit for better performance
-                    ]
-                );
+                $sample = $resto->findOne();
+                if ($sample) {
+                    sendResponse(true, [
+                        'name' => $sample['name'] ?? 'N/A',
+                        'borough' => $sample['borough'] ?? 'N/A',
+                        'cuisine' => $sample['cuisine'] ?? 'N/A',
+                        'restaurant_id' => $sample['restaurant_id'] ?? 'N/A'
+                    ]);
+                } else {
+                    sendResponse(false, null, 'No restaurants found in collection');
+                }
+            } catch (Exception $e) {
+                sendResponse(false, null, 'Error getting sample: ' . $e->getMessage());
+            }
+            break;
+            
+        case 'debug-info':
+            // Debug endpoint
+            try {
+                $databases = [];
+                foreach ($client->listDatabases() as $db) {
+                    $databases[] = $db['name'];
+                }
                 
-                $count = 0;
+                $collections = [];
+                foreach ($client->restaurant_db->listCollections() as $collection) {
+                    $collections[] = $collection['name'];
+                }
+                
+                $count = $resto->countDocuments();
+                $sample = $resto->findOne();
+                
+                $debugInfo = [
+                    'available_databases' => $databases,
+                    'collections_in_restaurant_db' => $collections,
+                    'restaurant_count' => $count,
+                    'sample_borough' => $sample['borough'] ?? 'N/A',
+                    'database_used' => 'restaurant_db',
+                    'collection_used' => 'restaurants'
+                ];
+                
+                sendResponse(true, $debugInfo);
+            } catch (Exception $e) {
+                sendResponse(false, null, 'Debug error: ' . $e->getMessage());
+            }
+            break;
+            
+        case 'all-restaurants':
+            // Get all restaurants for table view
+            try {
+                $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 0; // 0 = no limit
+                $skip = isset($_GET['skip']) ? (int)$_GET['skip'] : 0;
+                
+                $options = ['projection' => ['_id' => 0]];
+                if ($limit > 0) {
+                    $options['limit'] = $limit;
+                }
+                if ($skip > 0) {
+                    $options['skip'] = $skip;
+                }
+                
+                $cursor = $resto->find([], $options);
+                $restaurants = [];
+                
                 foreach ($cursor as $doc) {
-                    $count++;
-                    echo '<div class="restaurant">';
-                    echo '<h3>Restaurant #' . $count . '</h3>';
-                    
+                    $restaurant = [];
                     foreach ($doc as $key => $value) {
                         if (is_string($value) || is_numeric($value)) {
-                            echo '<div class="restaurant-field">';
-                            echo '<span class="field-name">' . ucfirst(str_replace('_', ' ', $key)) . ':</span> ';
-                            echo '<span class="field-value">' . htmlspecialchars($value) . '</span>';
-                            echo '</div>';
-                        }
-                        // Handle arrays and objects (like address, grades)
-                        else if (is_array($value) || is_object($value)) {
-                            if ($key !== 'grades') { // Handle grades separately later
-                                echo '<div class="restaurant-field">';
-                                echo '<span class="field-name">' . ucfirst(str_replace('_', ' ', $key)) . ':</span> ';
-                                echo '<span class="field-value">' . htmlspecialchars(json_encode($value)) . '</span>';
-                                echo '</div>';
+                            $restaurant[$key] = $value;
+                        } else if (is_array($value) || is_object($value)) {
+                            if ($key === 'grades') {
+                                // Special handling for grades array
+                                $grades = [];
+                                foreach ($value as $grade) {
+                                    $gradeItem = [];
+                                    if (isset($grade['date'])) {
+                                        $date = $grade['date'];
+                                        if (is_object($date) && method_exists($date, 'toDateTime')) {
+                                            $gradeItem['date'] = $date->toDateTime()->format('Y-m-d');
+                                        } else {
+                                            $gradeItem['date'] = (string) $date;
+                                        }
+                                    }
+                                    if (isset($grade['grade'])) {
+                                        $gradeItem['grade'] = $grade['grade'];
+                                    }
+                                    if (isset($grade['score'])) {
+                                        $gradeItem['score'] = $grade['score'];
+                                    }
+                                    $grades[] = $gradeItem;
+                                }
+                                $restaurant[$key] = $grades;
+                            } else {
+                                $restaurant[$key] = json_decode(json_encode($value), true);
                             }
                         }
                     }
-                    echo '</div>';
+                    $restaurants[] = $restaurant;
                 }
                 
-                if ($count == 0) {
-                    echo '<p>No restaurants found in Staten Island.</p>';
-                } else {
-                    echo '<p><strong>Showing first 10 restaurants.</strong> <span class="count">' . $count . ' displayed</span></p>';
-                }
+                sendResponse(true, $restaurants);
                 
             } catch (Exception $e) {
-                echo '<div class="error">Error fetching Staten Island restaurants: ' . htmlspecialchars($e->getMessage()) . '</div>';
+                sendResponse(false, null, 'Error getting all restaurants: ' . $e->getMessage());
             }
-            ?>
-        </div>
-
-        <!-- Section 3: High Score Restaurants -->
-        <div class="section">
-            <h2>⭐ Restaurants with High Scores (> 70)</h2>
-            <?php
+            break;
+            
+        case 'boroughs':
+            // Get distinct boroughs
             try {
-                $cursor = $resto->find(
-                    ['grades.score' => ['$gt' => 70]],
-                    [
-                        'projection' => ['_id' => 0],
-                        'limit' => 5 // Limit for better performance
-                    ]
-                );
+                $cursor = $resto->distinct('borough');
+                $boroughs = [];
                 
-                $count = 0;
-                foreach ($cursor as $doc) {
-                    $count++;
-                    echo '<div class="restaurant">';
-                    echo '<h3>High-Rated Restaurant #' . $count . '</h3>';
-                    
-                    foreach ($doc as $key => $value) {
-                        if (is_string($value) || is_numeric($value)) {
-                            echo '<div class="restaurant-field">';
-                            echo '<span class="field-name">' . ucfirst(str_replace('_', ' ', $key)) . ':</span> ';
-                            echo '<span class="field-value">' . htmlspecialchars($value) . '</span>';
-                            echo '</div>';
-                        }
-                        
-                        // Handle grades array specially
-                        if ($key === "grades" && is_array($value)) {
-                            echo '<div class="grades">';
-                            echo '<span class="field-name">Grades:</span>';
-                            
+                foreach ($cursor as $borough) {
+                    if (!empty($borough)) {
+                        $boroughs[] = $borough;
+                    }
+                }
+                
+                sendResponse(true, $boroughs);
+            } catch (Exception $e) {
+                sendResponse(false, null, 'Error getting boroughs: ' . $e->getMessage());
+            }
+            break;
+            
+        case 'staten-island':
+            // Get Staten Island restaurants
+            $cursor = $resto->find(
+                ['borough' => 'Staten Island'],
+                [
+                    'projection' => ['_id' => 0],
+                    'limit' => 10
+                ]
+            );
+            
+            $restaurants = [];
+            foreach ($cursor as $doc) {
+                // Convert MongoDB document to associative array
+                $restaurant = [];
+                foreach ($doc as $key => $value) {
+                    if (is_string($value) || is_numeric($value)) {
+                        $restaurant[$key] = $value;
+                    } else if (is_array($value) || is_object($value)) {
+                        // Convert objects/arrays to JSON for frontend
+                        if ($key === 'grades') {
+                            // Special handling for grades array
+                            $grades = [];
                             foreach ($value as $grade) {
-                                $scoreClass = (isset($grade['score']) && $grade['score'] > 70) ? 'grade-item high-score' : 'grade-item';
-                                echo '<div class="' . $scoreClass . '">';
-                                
+                                $gradeItem = [];
                                 if (isset($grade['date'])) {
                                     $date = $grade['date'];
                                     if (is_object($date) && method_exists($date, 'toDateTime')) {
-                                        $date = $date->toDateTime()->format('Y-m-d');
+                                        $gradeItem['date'] = $date->toDateTime()->format('Y-m-d');
+                                    } else {
+                                        $gradeItem['date'] = (string) $date;
                                     }
-                                    echo '<strong>Date:</strong> ' . htmlspecialchars($date) . ' | ';
                                 }
-                                
                                 if (isset($grade['grade'])) {
-                                    echo '<strong>Grade:</strong> ' . htmlspecialchars($grade['grade']) . ' | ';
+                                    $gradeItem['grade'] = $grade['grade'];
                                 }
-                                
                                 if (isset($grade['score'])) {
-                                    echo '<strong>Score:</strong> ' . htmlspecialchars($grade['score']);
+                                    $gradeItem['score'] = $grade['score'];
                                 }
-                                
-                                echo '</div>';
+                                $grades[] = $gradeItem;
                             }
-                            echo '</div>';
+                            $restaurant[$key] = $grades;
+                        } else {
+                            $restaurant[$key] = json_decode(json_encode($value), true);
                         }
                     }
-                    echo '</div>';
                 }
-                
-                if ($count == 0) {
-                    echo '<p>No restaurants found with grades score > 70.</p>';
-                } else {
-                    echo '<p><strong>Showing first 5 high-rated restaurants.</strong> <span class="count">' . $count . ' displayed</span></p>';
-                }
-                
-            } catch (Exception $e) {
-                echo '<div class="error">Error fetching high-score restaurants: ' . htmlspecialchars($e->getMessage()) . '</div>';
+                $restaurants[] = $restaurant;
             }
-            ?>
-        </div>
-
-        <footer style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #6c757d;">
-            <p>🔗 MongoDB Restaurant Data Analysis | Generated on <?php echo date('Y-m-d H:i:s'); ?></p>
-        </footer>
-    </div>
-</body>
-</html>
+            
+            sendResponse(true, $restaurants);
+            break;
+            
+        case 'high-score':
+            // Get restaurants with high scores (> 70)
+            $cursor = $resto->find(
+                ['grades.score' => ['$gt' => 70]],
+                [
+                    'projection' => ['_id' => 0],
+                    'limit' => 5
+                ]
+            );
+            
+            $restaurants = [];
+            foreach ($cursor as $doc) {
+                $restaurant = [];
+                foreach ($doc as $key => $value) {
+                    if (is_string($value) || is_numeric($value)) {
+                        $restaurant[$key] = $value;
+                    } else if ($key === 'grades' && is_array($value)) {
+                        // Special handling for grades array
+                        $grades = [];
+                        foreach ($value as $grade) {
+                            $gradeItem = [];
+                            if (isset($grade['date'])) {
+                                $date = $grade['date'];
+                                if (is_object($date) && method_exists($date, 'toDateTime')) {
+                                    $gradeItem['date'] = $date->toDateTime()->format('Y-m-d');
+                                } else {
+                                    $gradeItem['date'] = (string) $date;
+                                }
+                            }
+                            if (isset($grade['grade'])) {
+                                $gradeItem['grade'] = $grade['grade'];
+                            }
+                            if (isset($grade['score'])) {
+                                $gradeItem['score'] = $grade['score'];
+                            }
+                            $grades[] = $gradeItem;
+                        }
+                        $restaurant[$key] = $grades;
+                    } else if (is_array($value) || is_object($value)) {
+                        $restaurant[$key] = json_decode(json_encode($value), true);
+                    }
+                }
+                $restaurants[] = $restaurant;
+            }
+            
+            sendResponse(true, $restaurants);
+            break;
+            
+        case 'restaurant-by-id':
+            // Get specific restaurant by ID (optional endpoint)
+            $id = $_GET['id'] ?? '';
+            if (empty($id)) {
+                sendResponse(false, null, 'Restaurant ID is required');
+            }
+            
+            try {
+                $objectId = new MongoDB\BSON\ObjectId($id);
+                $restaurant = $resto->findOne(['_id' => $objectId]);
+                
+                if ($restaurant) {
+                    // Convert to associative array
+                    $result = json_decode(json_encode($restaurant), true);
+                    sendResponse(true, $result);
+                } else {
+                    sendResponse(false, null, 'Restaurant not found');
+                }
+            } catch (Exception $e) {
+                sendResponse(false, null, 'Invalid restaurant ID format');
+            }
+            break;
+            
+        case 'search':
+            // Search restaurants by name or cuisine (optional endpoint)
+            $query = $_GET['query'] ?? '';
+            $limit = (int) ($_GET['limit'] ?? 10);
+            
+            if (empty($query)) {
+                sendResponse(false, null, 'Search query is required');
+            }
+            
+            $searchCondition = [
+                '$or' => [
+                    ['name' => ['$regex' => $query, '$options' => 'i']],
+                    ['cuisine' => ['$regex' => $query, '$options' => 'i']]
+                ]
+            ];
+            
+            $cursor = $resto->find(
+                $searchCondition,
+                [
+                    'projection' => ['_id' => 0, 'name' => 1, 'cuisine' => 1, 'borough' => 1, 'address' => 1],
+                    'limit' => $limit
+                ]
+            );
+            
+            $results = [];
+            foreach ($cursor as $doc) {
+                $results[] = json_decode(json_encode($doc), true);
+            }
+            
+            sendResponse(true, $results);
+            break;
+            
+        default:
+            sendResponse(false, null, 'Invalid action. Available actions: ping, count, sample, debug-info, boroughs, all-restaurants, staten-island, high-score, restaurant-by-id, search');
+            break;
+    }
+    
+} catch (MongoDB\Exception\Exception $e) {
+    sendResponse(false, null, 'MongoDB Error: ' . $e->getMessage());
+} catch (Exception $e) {
+    sendResponse(false, null, 'Error: ' . $e->getMessage());
+}
+?>
