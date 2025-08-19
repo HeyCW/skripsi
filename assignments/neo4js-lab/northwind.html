@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Northwind Competitor Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .search-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1rem;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-weight: 600;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .results-section {
+            margin-top: 30px;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .results-title {
+            font-size: 1.5rem;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .results-count {
+            background: #4facfe;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 18px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        td {
+            padding: 15px 18px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s ease;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #4facfe;
+            font-size: 1.1rem;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .search-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Northwind Competitor Analysis</h1>
+            <p>Find competitors based on shared product categories</p>
+        </div>
+        
+        <div class="content">
+            <div class="search-section">
+                <form id="competitorForm">
+                    <div class="form-group">
+                        <label for="company">Company Name:</label>
+                        <input type="text" id="company" name="company" placeholder="Enter company name (e.g., Exotic Liquids)" required>
+                    </div>
+                    <button type="submit" class="btn" id="searchBtn">
+                        Find Competitors
+                    </button>
+                </form>
+            </div>
+            
+            <div id="results" class="results-section" style="display: none;">
+                <div class="results-header">
+                    <h2 class="results-title">Competitor Analysis Results</h2>
+                    <span class="results-count" id="resultsCount">0 competitors found</span>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Competitor Company</th>
+                                <th>Shared Products</th>
+                                <th>Competition Level</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="loading" class="loading" style="display: none;">
+                <p>🔄 Analyzing competitors...</p>
+            </div>
+            
+            <div id="message" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('competitorForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const company = document.getElementById('company').value.trim();
+            const searchBtn = document.getElementById('searchBtn');
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            const message = document.getElementById('message');
+            
+            if (!company) {
+                showMessage('Please enter a company name', 'error');
+                return;
+            }
+            
+            // Show loading state
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Searching...';
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            message.style.display = 'none';
+            
+            try {
+                const response = await fetch('northwind-api.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `company=${encodeURIComponent(company)}`
+                });
+                
+                console.log('Response:', response);
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResults(data.data, company);
+                } else {
+                    showMessage(data.message || 'An error occurred', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage(`Network error ${error.message}. Please check your connection and try again.`, 'error');
+            } finally {
+                // Reset button state
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Find Competitors';
+                loading.style.display = 'none';
+            }
+        });
+        
+        function displayResults(data, company) {
+            const results = document.getElementById('results');
+            const resultsBody = document.getElementById('resultsBody');
+            const resultsCount = document.getElementById('resultsCount');
+            
+            if (data.length === 0) {
+                showMessage(`No competitors found for "${company}". The company might not exist or have no shared product categories.`, 'error');
+                return;
+            }
+            
+            resultsBody.innerHTML = '';
+            
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                
+                const competitionLevel = getCompetitionLevel(row.NoProducts);
+                
+                tr.innerHTML = `
+                    <td><strong>${escapeHtml(row.Competitor)}</strong></td>
+                    <td><span style="font-weight: bold; color: #4facfe;">${row.NoProducts}</span></td>
+                    <td><span class="competition-badge ${competitionLevel.class}">${competitionLevel.text}</span></td>
+                `;
+                
+                resultsBody.appendChild(tr);
+            });
+            
+            resultsCount.textContent = `${data.length} competitor${data.length !== 1 ? 's' : ''} found`;
+            results.style.display = 'block';
+            
+            showMessage(`Found ${data.length} competitor${data.length !== 1 ? 's' : ''} for "${company}"`, 'success');
+        }
+        
+        function getCompetitionLevel(productCount) {
+            if (productCount >= 5) {
+                return { class: 'high', text: 'High Competition' };
+            } else if (productCount >= 3) {
+                return { class: 'medium', text: 'Medium Competition' };
+            } else {
+                return { class: 'low', text: 'Low Competition' };
+            }
+        }
+        
+        function showMessage(text, type) {
+            const message = document.getElementById('message');
+            message.className = type;
+            message.textContent = text;
+            message.style.display = 'block';
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 5000);
+        }
+        
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+    
+    <style>
+        .competition-badge {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .competition-badge.high {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .competition-badge.medium {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        
+        .competition-badge.low {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+    </style>
+</body>
+</html>

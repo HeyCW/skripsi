@@ -1,0 +1,56 @@
+# Composer dependencies
+/vendor/
+composer.phar
+
+# Composer temporary files (specific patterns)
+/vendor/composer/tmp-*.zip
+/vendor/composer/*.zip
+/vendor/composer/tmp*
+
+# Composer lock file (optional - see note below)
+# composer.lock
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# PHP specific
+*.log
+*.tmp
+*.temp
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Cache and temporary files
+/cache/
+/tmp/
+/temp/
+
+# User-specific files
+*.user.ini
+
+# Node modules (if using)
+node_modules/
+
+# Build files
+/build/
+/dist/
+
+# PHPUnit
+/tests/_coverage/
+.phpunit.result.cache
