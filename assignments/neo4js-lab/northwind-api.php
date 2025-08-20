@@ -215,41 +215,63 @@ try {
         ]);
         
     } else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        // Return list of available companies for testing
-        $companiesQuery = "MATCH (s:Supplier) RETURN s.companyName as companyName ORDER BY s.companyName";
-        $result = $neo4j->executeQuery($companiesQuery);
-        
-        $companies = [];
-        foreach ($result as $record) {
-            $companies[] = $record->get('companyName');
-        }
-        
-        // Get database statistics
-        $statsQueries = [
-            'suppliers' => "MATCH (s:Supplier) RETURN count(s) as count",
-            'products' => "MATCH (p:Product) RETURN count(p) as count",
-            'categories' => "MATCH (c:Category) RETURN count(c) as count",
-            'supplies_relationships' => "MATCH ()-[r:SUPPLIES]->() RETURN count(r) as count",
-            'part_of_relationships' => "MATCH ()-[r:PART_OF]->() RETURN count(r) as count"
-        ];
-        
-        $stats = [];
-        foreach ($statsQueries as $key => $query) {
-            try {
+
+        $action = $_GET['action'] ?? 'default';
+
+        switch ($action) {
+            case 'getCompanies':
+                $query = "MATCH (s:Supplier) RETURN s.companyName as companyName ORDER BY s.companyName";
                 $result = $neo4j->executeQuery($query);
-                $stats[$key] = $result->first()->get('count');
-            } catch (Exception $e) {
-                $stats[$key] = 0;
-            }
+                
+                $companies = [];
+                foreach ($result as $record) {
+                    $companyName = $record->get('companyName');
+                    if (!empty($companyName)) {
+                        $companies[] = [
+                            'name' => $companyName // For compatibility
+                        ];
+                    }
+                }
+
+                $response = [
+                    'success' => true,
+                    'message' => 'Companies retrieved successfully',
+                    'data' => $companies,
+                    'count' => count($companies)
+                ];
+
+                // Ensure clean JSON output
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode($response, JSON_UNESCAPED_UNICODE);
+                exit(); // Important: stop execution here
+
+            case 'getStats':
+                // Get database statistics
+                $statsQueries = [
+                    'suppliers' => "MATCH (s:Supplier) RETURN count(s) as count",
+                    'products' => "MATCH (p:Product) RETURN count(p) as count",
+                    'categories' => "MATCH (c:Category) RETURN count(c) as count",
+                    'supplies_relationships' => "MATCH ()-[r:SUPPLIES]->() RETURN count(r) as count",
+                    'part_of_relationships' => "MATCH ()-[r:PART_OF]->() RETURN count(r) as count"
+                ];
+                
+                $stats = [];
+                foreach ($statsQueries as $key => $query) {
+                    try {
+                        $result = $neo4j->executeQuery($query);
+                        $stats[$key] = $result->first()->get('count');
+                    } catch (Exception $e) {
+                        $stats[$key] = 0;
+                    }
+                }
+
+                echo json_encode(
+                    [
+                        'success' => true,
+                        'data' => $stats
+                    ]
+                );
         }
-        
-        echo json_encode([
-            'success' => true,
-            'message' => 'Neo4j Docker connection successful using Laudis Client',
-            'companies' => $companies,
-            'database_stats' => $stats,
-            'connection_info' => $neo4j->getConnectionInfo()
-        ]);
     }
     
 } catch (Exception $e) {
