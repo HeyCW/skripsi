@@ -59,7 +59,6 @@
     <script>
         // Configuration
         const API_URL = 'redis-list.php'; // Backend API endpoint
-        let debugMode = false; // Set to true for debugging
         
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
@@ -128,10 +127,6 @@
             .then(response => {
                 // Get response text first to debug
                 return response.text().then(text => {
-                    if (debugMode) {
-                        showDebugInfo('Response Text:', text);
-                    }
-                    
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}, response: ${text}`);
                     }
@@ -162,9 +157,6 @@
             .catch(error => {
                 console.error('Error:', error);
                 showMessage('Error: ' + error.message, 'error');
-                if (debugMode) {
-                    showDebugInfo('Error:', error.message);
-                }
             })
             .finally(() => {
                 // Re-enable buttons
@@ -178,18 +170,6 @@
             .then(response => {
                 // Get response text first to debug
                 return response.text().then(text => {
-                    if (debugMode) {
-                        showDebugInfo('Load Response:', text);
-                    }
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}, response: ${text}`);
-                    }
-                    
-                    // Check if response is empty
-                    if (!text.trim()) {
-                        throw new Error('Empty response from server');
-                    }
                     
                     // Try to parse as JSON
                     try {
@@ -213,9 +193,6 @@
                 updateTable([]); // Show empty table on error
                 updateStatus(0, 'Disconnected');
                 
-                if (debugMode) {
-                    showDebugInfo('Load Error:', error.message);
-                }
             });
         }
         
@@ -280,16 +257,6 @@
             debugContent.textContent = `${title}\n${content}`;
             debugEl.style.display = 'block';
         }
-        
-        // Toggle debug mode (you can call this from browser console)
-        window.toggleDebug = function() {
-            debugMode = !debugMode;
-            const debugEl = document.getElementById('debugInfo');
-            if (!debugMode) {
-                debugEl.style.display = 'none';
-            }
-            console.log('Debug mode:', debugMode ? 'ON' : 'OFF');
-        };
         
         // Handle network errors globally
         window.addEventListener('online', function() {

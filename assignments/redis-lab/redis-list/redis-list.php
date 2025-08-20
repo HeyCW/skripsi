@@ -1,8 +1,10 @@
 <?php
-// Set content type to JSON and disable output buffering
+ require_once __DIR__ . '/vendor/autoload.php';
+// Redis List Management - PHP Backend Solution
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
 // Handle preflight requests
@@ -10,16 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Error handling - capture any PHP errors
-error_reporting(E_ALL);
-ini_set('display_errors', 0); // Don't display errors to avoid breaking JSON
-ob_start(); // Start output buffering to catch any unexpected output
-
+// TODO 5: LENGKAPI REDIS CONNECTION SETUP - JAWABAN
+// Setup koneksi ke Redis server
 try {
-    // Load Composer autoloader
-    require_once __DIR__ . '/vendor/autoload.php';
-    
-    // Redis configuration
     $redisConfig = [
         'scheme' => 'tcp',
         'host'   => '127.0.0.1',
@@ -33,134 +28,203 @@ try {
     // Test connection
     $redis->ping();
     
-    // Redis list key
+    // Set Redis key name untuk list
     $listKey = 'people_list';
     
-    // Get request method and data
-    $requestMethod = $_SERVER['REQUEST_METHOD'];
-    $response = ['success' => false, 'message' => '', 'data' => null];
+} catch (Exception $e) {
+    sendResponse(false, null, 'Failed to connect to Redis: ' . $e->getMessage());
+}
+
+/**
+ * Send JSON response
+ */
+function sendResponse($success, $data = null, $message = '', $extra = []) {
+    $response = array_merge([
+        'success' => $success,
+        'message' => $message
+    ], $extra);
     
-    if ($requestMethod === 'GET' || (isset($_GET['action']) && $_GET['action'] === 'get')) {
-        // Handle GET request - return current list
-        try {
-            $people = $redis->lrange($listKey, 0, -1);
-            $listLength = $redis->llen($listKey);
-            
-            $response = [
-                'success' => true,
-                'message' => 'Data retrieved successfully',
-                'data' => [
-                    'people' => $people,
-                    'list_length' => $listLength,
-                    'redis_status' => 'Connected'
-                ]
-            ];
-        } catch (Exception $e) {
-            $response = [
-                'success' => false,
-                'error' => 'Failed to retrieve data: ' . $e->getMessage(),
-                'data' => [
-                    'people' => [],
-                    'list_length' => 0,
-                    'redis_status' => 'Error: ' . $e->getMessage()
-                ]
-            ];
+    if ($data !== null) {
+        $response['data'] = $data;
+    }
+    
+    echo json_encode($response);
+    exit;
+}
+
+// Main execution
+try {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Handle POST requests (LPUSH, RPUSH, LPOP, RPOP)
+        $input = json_decode(file_get_contents('php://input'), true);
+        $action = $input['action'] ?? '';
+        $name = $input['name'] ?? '';
+        
+        switch ($action) {
+            case 'lpush':
+                handleLPush($redis, $listKey, $name);
+                break;
+                
+            case 'rpush':
+                handleRPush($redis, $listKey, $name);
+                break;
+                
+            case 'lpop':
+                handleLPop($redis, $listKey);
+                break;
+                
+            case 'rpop':
+                handleRPop($redis, $listKey);
+                break;
+                
+            default:
+                sendResponse(false, null, 'Invalid action');
         }
         
-    } elseif ($requestMethod === 'POST') {
-        // Handle POST request - perform actions
-        $input = file_get_contents('php://input');
-        $data = json_decode($input, true);
+    } else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        // Handle GET requests (retrieve list data)
+        $action = $_GET['action'] ?? '';
         
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $response = [
-                'success' => false,
-                'message' => 'Invalid JSON input: ' . json_last_error_msg()
-            ];
+        if ($action === 'get') {
+            handleGetList($redis, $listKey);
         } else {
-            $action = $data['action'] ?? '';
-            $name = $data['name'] ?? '';
-            
-            try {
-                switch ($action) {
-                    case 'lpush':
-                        if (empty($name)) {
-                            $response['message'] = 'Name is required for LPUSH';
-                            break;
-                        }
-                        $result = $redis->lpush($listKey, $name);
-                        $response = [
-                            'success' => true,
-                            'message' => "Added '$name' to the left of list (new length: $result)"
-                        ];
-                        break;
-                        
-                    case 'rpush':
-                        if (empty($name)) {
-                            $response['message'] = 'Name is required for RPUSH';
-                            break;
-                        }
-                        $result = $redis->rpush($listKey, $name);
-                        $response = [
-                            'success' => true,
-                            'message' => "Added '$name' to the right of list (new length: $result)"
-                        ];
-                        break;
-                        
-                    case 'lpop':
-                        $poppedValue = $redis->lpop($listKey);
-                        if ($poppedValue === null) {
-                            $response['message'] = 'List is empty, nothing to pop';
-                        } else {
-                            $response = [
-                                'success' => true,
-                                'message' => "Removed '$poppedValue' from the left of list"
-                            ];
-                        }
-                        break;
-                        
-                    case 'rpop':
-                        $poppedValue = $redis->rpop($listKey);
-                        if ($poppedValue === null) {
-                            $response['message'] = 'List is empty, nothing to pop';
-                        } else {
-                            $response = [
-                                'success' => true,
-                                'message' => "Removed '$poppedValue' from the right of list"
-                            ];
-                        }
-                        break;
-                        
-                    default:
-                        $response['message'] = 'Invalid action. Supported actions: lpush, rpush, lpop, rpop';
-                        break;
-                }
-            } catch (Exception $e) {
-                $response = [
-                    'success' => false,
-                    'message' => 'Redis operation failed: ' . $e->getMessage()
-                ];
-            }
+            sendResponse(false, null, 'Invalid action');
         }
-    } else {
-        $response = [
-            'success' => false,
-            'message' => 'Method not allowed. Use GET or POST.'
-        ];
     }
     
 } catch (Exception $e) {
-    $response = [
-        'success' => false,
-        'message' => 'Server error: ' . $e->getMessage(),
-        'error_type' => get_class($e)
-    ];
+    error_log("Redis Error: " . $e->getMessage());
+    sendResponse(false, null, 'Server error: ' . $e->getMessage());
 }
 
-// Clear any output that might have been generated
-ob_end_clean();
+// TODO 6: LENGKAPI LPUSH OPERATION HANDLER - JAWABAN
+// Handle LPUSH operation (add to left/beginning of list)
+function handleLPush($redis, $listKey, $name) {
+    try {
+        // Validate name parameter tidak kosong
+        if (empty(trim($name))) {
+            sendResponse(false, null, 'Name is required for LPUSH operation');
+            return;
+        }
+        
+        // Gunakan Redis LPUSH command
+        $result = $redis->lPush($listKey, trim($name));
+        
+        if ($result !== false) {
+            // Send success response dengan message
+            sendResponse(true, null, "Added '{$name}' to the beginning of list. List length: {$result}");
+        } else {
+            sendResponse(false, null, 'Failed to add item to list');
+        }
+        
+    } catch (Exception $e) {
+        sendResponse(false, null, 'LPUSH error: ' . $e->getMessage());
+    }
+}
 
-// Send JSON response
-echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-exit;
+// TODO 7: LENGKAPI RPUSH OPERATION HANDLER - JAWABAN
+// Handle RPUSH operation (add to right/end of list)
+function handleRPush($redis, $listKey, $name) {
+    try {
+        // Validate name parameter tidak kosong
+        if (empty(trim($name))) {
+            sendResponse(false, null, 'Name is required for RPUSH operation');
+            return;
+        }
+        
+        // Gunakan Redis RPUSH command
+        $result = $redis->rPush($listKey, trim($name));
+        
+        if ($result !== false) {
+            // Send success response dengan message
+            sendResponse(true, null, "Added '{$name}' to the end of list. List length: {$result}");
+        } else {
+            sendResponse(false, null, 'Failed to add item to list');
+        }
+        
+    } catch (Exception $e) {
+        sendResponse(false, null, 'RPUSH error: ' . $e->getMessage());
+    }
+}
+
+// TODO 8: LENGKAPI LPOP OPERATION HANDLER - JAWABAN
+// Handle LPOP operation (remove from left/beginning of list)
+function handleLPop($redis, $listKey) {
+    try {
+        // Gunakan Redis LPOP command
+        $removedItem = $redis->lPop($listKey);
+        
+        // Check jika list kosong (LPOP returns false)
+        if ($removedItem === false) {
+            sendResponse(false, null, 'List is empty - nothing to remove from beginning');
+        } else {
+            // Send appropriate response dengan removed item
+            $currentLength = $redis->lLen($listKey);
+            sendResponse(true, null, "Removed '{$removedItem}' from beginning of list. Remaining items: {$currentLength}");
+        }
+        
+    } catch (Exception $e) {
+        sendResponse(false, null, 'LPOP error: ' . $e->getMessage());
+    }
+}
+
+// TODO 9: LENGKAPI RPOP OPERATION HANDLER - JAWABAN
+// Handle RPOP operation (remove from right/end of list)
+function handleRPop($redis, $listKey) {
+    try {
+        // Gunakan Redis RPOP command
+        $removedItem = $redis->rPop($listKey);
+        
+        // Check jika list kosong (RPOP returns false)
+        if ($removedItem === false) {
+            sendResponse(false, null, 'List is empty - nothing to remove from end');
+        } else {
+            // Send appropriate response dengan removed item
+            $currentLength = $redis->lLen($listKey);
+            sendResponse(true, null, "Removed '{$removedItem}' from end of list. Remaining items: {$currentLength}");
+        }
+        
+    } catch (Exception $e) {
+        sendResponse(false, null, 'RPOP error: ' . $e->getMessage());
+    }
+}
+
+// TODO 10: LENGKAPI GET LIST OPERATION - JAWABAN
+// Retrieve all items dari Redis list
+function handleGetList($redis, $listKey) {
+    try {
+        // Gunakan Redis LRANGE command untuk get semua items (0, -1)
+        $people = $redis->lRange($listKey, 0, -1);
+        
+        // Get list length menggunakan LLEN command
+        $listLength = $redis->lLen($listKey);
+        
+        // Check Redis connection status
+        $redisStatus = 'Connected';
+        try {
+            $redis->ping();
+        } catch (Exception $e) {
+            $redisStatus = 'Disconnected';
+        }
+        
+        // Prepare response data dengan people array, list_length, redis_status
+        $responseData = [
+            'people' => $people ?: [], // Ensure it's an array even if empty
+            'list_length' => $listLength,
+            'redis_status' => $redisStatus
+        ];
+        
+        // Send success response dengan data
+        sendResponse(true, $responseData, 'List data retrieved successfully');
+        
+    } catch (Exception $e) {
+        // Handle errors
+        sendResponse(false, [
+            'people' => [],
+            'list_length' => 0,
+            'redis_status' => 'Error'
+        ], 'Error retrieving list data: ' . $e->getMessage());
+    }
+}
+
 ?>

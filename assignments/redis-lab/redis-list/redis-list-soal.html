@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redis List Management - SOAL LATIHAN</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 50px; }
+        table { border-collapse: collapse; width: 100%; max-width: 500px; }
+        th, td { border: 1px solid #333; padding: 10px; text-align: center; }
+        th { background-color: #f0f0f0; }
+        .buttons { margin: 20px 0; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        input[type="text"] { padding: 8px; margin: 10px; width: 200px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        
+        /* Additional styles for better UX */
+        .loading { opacity: 0.6; pointer-events: none; }
+        .error { color: red; font-size: 12px; margin: 5px 0; }
+        .success { color: green; font-size: 12px; margin: 5px 0; }
+        .status { font-size: 12px; margin-top: 10px; }
+        .debug { background: #f5f5f5; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px; border-radius: 4px; }
+        
+        .exercise-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        .todo-item {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>REDIS LIST MANAGEMENT - SOAL LATIHAN</h1>
+        
+        <div class="exercise-info">
+            <h3>📝 TUGAS SISWA:</h3>
+            <p>Lengkapi bagian kode yang kosong (ditandai dengan TODO) untuk membuat aplikasi Redis List yang berfungsi penuh.</p>
+            
+            <h4 style="margin-top: 15px; color: #0066cc;">🌐 FRONTEND (JavaScript):</h4>
+            <div class="todo-item">TODO 1: Lengkapi function handleAction() untuk mengirim request ke server</div>
+            <div class="todo-item">TODO 2: Lengkapi function loadPeopleData() untuk mengambil data dari Redis</div>
+            <div class="todo-item">TODO 3: Lengkapi function updateTable() untuk menampilkan data dalam tabel</div>
+            <div class="todo-item">TODO 4: Lengkapi event listeners untuk button dan input field</div>
+            
+            <h4 style="margin-top: 15px; color: #cc6600;">⚙️ BACKEND (PHP + Redis):</h4>
+            <div class="todo-item">TODO 5: Lengkapi Redis connection setup</div>
+            <div class="todo-item">TODO 6: Lengkapi LPUSH operation handler</div>
+            <div class="todo-item">TODO 7: Lengkapi RPUSH operation handler</div>
+            <div class="todo-item">TODO 8: Lengkapi LPOP operation handler</div>
+            <div class="todo-item">TODO 9: Lengkapi RPOP operation handler</div>
+            <div class="todo-item">TODO 10: Lengkapi GET operation untuk retrieve list data</div>
+        </div>
+       
+        <table id="peopleTable">
+            <thead>
+                <tr><th>PEOPLE</th></tr>
+            </thead>
+            <tbody id="peopleTableBody">
+                <!-- Will be populated by JavaScript -->
+                <tr><td>Loading...</td></tr>
+            </tbody>
+        </table>
+       
+        <div class="buttons">
+            <div style="display: inline-block;">
+                <input type="text" id="nameInput" placeholder="Enter name" required>
+                <br>
+                <button type="button" data-action="lpush">LPUSH</button>
+                <button type="button" data-action="lpop">LPOP</button>
+                <button type="button" data-action="rpop">RPOP</button>
+                <button type="button" data-action="rpush">RPUSH</button>
+            </div>
+            <div id="message" class="status"></div>
+        </div>
+       
+        <div id="statusInfo" class="status">
+            <small>Loading status...</small>
+        </div>
+        
+        <div id="debugInfo" class="debug" style="display: none;">
+            <strong>Debug Info:</strong>
+            <pre id="debugContent"></pre>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_URL = 'redis-list.php'; // Backend API endpoint
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPeopleData();
+            setupButtonListeners();
+            
+            // Auto refresh every 5 seconds
+            setInterval(loadPeopleData, 5000);
+        });
+        
+        
+        // TODO 1: LENGKAPI HANDLE ACTION FUNCTION
+        // Tugas: Handle button actions dan kirim request ke server
+        function handleAction(action, name) {
+            // TODO: Validation untuk push operations (perlu name)
+            // TODO: Disable buttons during request (add loading class)
+            // TODO: Prepare request data object
+            // TODO: Fetch POST request ke API_URL dengan JSON data
+            // TODO: Handle response - success/error
+            // TODO: Clear input setelah successful push
+            // TODO: Reload data dan re-enable buttons
+            
+            // KODE ANDA DI SINI:
+            
+            
+        }
+        
+        // TODO 2: LENGKAPI LOAD PEOPLE DATA FUNCTION
+        // Tugas: Load people data dari backend
+        function loadPeopleData() {
+            // TODO: Fetch GET request ke API_URL dengan query parameter action=get
+            // TODO: Handle response text dan parse JSON
+            // TODO: Update table dengan data.data.people
+            // TODO: Update status dengan list_length dan redis_status
+            // TODO: Handle errors dan show appropriate messages
+            
+            // KODE ANDA DI SINI:
+            
+            
+        }
+        
+        // TODO 3: LENGKAPI UPDATE TABLE FUNCTION
+        // Tugas: Update tabel dengan data people
+        function updateTable(people) {
+            // TODO: Get tbody element
+            // TODO: Clear existing content
+            // TODO: Check if people array is empty, show "No people in list"
+            // TODO: Loop through people array dan create table rows
+            // TODO: Fill remaining rows to make 10 total (dengan &nbsp;)
+            
+            // KODE ANDA DI SINI:
+            
+            
+        }
+
+        // TODO 4: LENGKAPI SETUP EVENT LISTENERS
+        // Tugas: Setup event listeners untuk buttons dan input field
+        function setupButtonListeners() {
+            // TODO: Get semua buttons dengan data-action attribute
+            // TODO: Get nameInput element
+            // TODO: Add click event listener untuk setiap button
+            // TODO: Add keypress event listener untuk input field (Enter key)
+            // TODO: Panggil handleAction dengan action dan name parameters
+            
+            // KODE ANDA DI SINI:
+            
+            
+        }
+        
+        // Update status information (SUDAH JADI)
+        function updateStatus(listLength, redisStatus) {
+            const statusEl = document.getElementById('statusInfo');
+            statusEl.innerHTML = `
+                <small>
+                    List length: ${listLength} |
+                    Redis status: ${redisStatus}
+                </small>
+            `;
+        }
+        
+        // Show message to user (SUDAH JADI)
+        function showMessage(message, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = message;
+            messageEl.className = `status ${type}`;
+            
+            // Clear message after 5 seconds for success/error
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => {
+                    messageEl.textContent = '';
+                    messageEl.className = 'status';
+                }, 5000);
+            }
+        }
+        
+        // Show debug information (SUDAH JADI)
+        function showDebugInfo(title, content) {
+            const debugEl = document.getElementById('debugInfo');
+            const debugContent = document.getElementById('debugContent');
+            debugContent.textContent = `${title}\n${content}`;
+            debugEl.style.display = 'block';
+        }
+        
+        // Handle network errors globally (SUDAH JADI)
+        window.addEventListener('online', function() {
+            showMessage('Connection restored', 'success');
+            loadPeopleData();
+        });
+        
+        window.addEventListener('offline', function() {
+            showMessage('Connection lost', 'error');
+        });
+    </script>
+</body>
+</html>
