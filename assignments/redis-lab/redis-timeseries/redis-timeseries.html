@@ -41,6 +41,26 @@
       background-color: #6c757d;
       cursor: not-allowed;
     }
+    
+    /* Button styles for RAW/AGR */
+    .data-buttons {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    .data-buttons button {
+      background-color: #17a2b8;
+    }
+    .data-buttons button:hover {
+      background-color: #138496;
+    }
+    .data-buttons button.active {
+      background-color: #28a745;
+    }
+    .data-buttons button.active:hover {
+      background-color: #218838;
+    }
+    
     #result {
       margin-top: 20px;
       padding: 15px;
@@ -201,12 +221,10 @@
   </style>
 </head>
 <body>
-  <button id="rawButton" style="margin-bottom: 20px;">
-    RAW
-  </button>
-  <button id="agrButton" style="margin-bottom: 20px;">
-    AGR
-  </button>
+  <div class="data-buttons">
+    <button id="rawButton">RAW Data</button>
+    <button id="agrButton">Aggregated Data</button>
+  </div>
 
   <h1>Upload CSV to Redis TimeSeries</h1>
   
@@ -231,6 +249,7 @@
     let filteredData = [];
     let currentPage = 1;
     let itemsPerPage = 10;
+    let currentDataType = 'raw'; // Track current data type
 
     // Function to filter data based on search
     function filterData(searchTerm) {
@@ -326,7 +345,7 @@
     }
 
     // Function to create table from JSON data with pagination
-    function createTable(data) {
+    function createTable(data, dataType = 'raw') {
       if (!Array.isArray(data) || data.length === 0) {
         return '<p>No data to display</p>';
       }
@@ -335,12 +354,14 @@
       currentData = data;
       filteredData = [...data];
       currentPage = 1;
+      currentDataType = dataType;
       
       let html = '';
       
       // Create summary
       html += `<div class="summary">
         <h4>Data Summary</h4>
+        <p><strong>Data Type:</strong> ${dataType === 'raw' ? 'Raw Data' : 'Aggregated Data'}</p>
         <p><strong>Total Records:</strong> ${data.length}</p>
         <p><strong>Status:</strong> <span class="status-success">Success</span></p>
       </div>`;
@@ -452,6 +473,112 @@
       updateTable();
     }
 
+    // Function to update button states
+    function updateButtonStates(activeButton) {
+      const rawBtn = document.getElementById('rawButton');
+      const agrBtn = document.getElementById('agrButton');
+      
+      rawBtn.classList.remove('active');
+      agrBtn.classList.remove('active');
+      
+      if (activeButton) {
+        activeButton.classList.add('active');
+      }
+    }
+
+    // Function to load data based on type
+    async function loadData(dataType) {
+      const resultDiv = document.getElementById('result');
+      
+      // Show loading
+      resultDiv.className = 'loading';
+      resultDiv.innerHTML = `
+        <div class="summary">
+          <h4>Loading</h4>
+          <p>Fetching ${dataType === 'raw' ? 'raw' : 'aggregated'} data...</p>
+        </div>
+      `;
+      resultDiv.style.display = 'block';
+      
+      try {
+        const url = dataType === 'raw' ? 'redis-timeseries.php?raw=true' : 'redis-timeseries.php?agr=true';
+        const response = await fetch(url);
+        const responseText = await response.text();
+        
+        if (response.ok) {
+          try {
+            const data = JSON.parse(responseText);
+            resultDiv.className = 'success';
+            
+            if (Array.isArray(data) && data.length > 0) {
+              resultDiv.innerHTML = createTable(data, dataType);
+              
+              // Add search event listener
+              setTimeout(() => {
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                  searchInput.addEventListener('keyup', function(e) {
+                    if (e.key === 'Enter') {
+                      performSearch();
+                    }
+                  });
+                }
+              }, 100);
+            } else {
+              resultDiv.innerHTML = `
+                <div class="summary">
+                  <h4>No Data</h4>
+                  <p>No ${dataType === 'raw' ? 'raw' : 'aggregated'} data found. Please upload a CSV file first.</p>
+                </div>
+              `;
+            }
+          } catch (error) {
+            resultDiv.className = 'error';
+            resultDiv.innerHTML = `
+              <div class="summary">
+                <h4>Parse Error</h4>
+                <p><span class="status-error">Failed to parse response</span></p>
+              </div>
+              <div class="table-container">
+                <table>
+                  <thead><tr><th>Raw Response</th></tr></thead>
+                  <tbody><tr><td>${responseText}</td></tr></tbody>
+                </table>
+              </div>
+            `;
+          }
+        } else {
+          resultDiv.className = 'error';
+          resultDiv.innerHTML = `
+            <div class="summary">
+              <h4>Error</h4>
+              <p><span class="status-error">Failed to load data</span></p>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead><tr><th>Error Details</th></tr></thead>
+                <tbody><tr><td class="status-error">${responseText}</td></tr></tbody>
+              </table>
+            </div>
+          `;
+        }
+      } catch (error) {
+        resultDiv.className = 'error';
+        resultDiv.innerHTML = `
+          <div class="summary">
+            <h4>Network Error</h4>
+            <p><span class="status-error">Connection failed</span></p>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead><tr><th>Error Details</th></tr></thead>
+              <tbody><tr><td class="status-error">${error.message}</td></tr></tbody>
+            </table>
+          </div>
+        `;
+      }
+    }
+
     // Function to handle non-array data
     function createNonArrayTable(data) {
       let html = '';
@@ -489,68 +616,9 @@
     }
 
     document.addEventListener('DOMContentLoaded', async function () {
-      const response = await fetch('redis-timeseries.php', {
-          method: 'GET',
-      });
-      const resultDiv = document.getElementById('result');
-      
-      if (response.ok) {
-          const responseText = await response.text();
-          
-          try {
-              const data = JSON.parse(responseText);
-              
-              resultDiv.className = 'success';
-              if (Array.isArray(data) && data.length > 0) {
-                resultDiv.innerHTML = createTable(data);
-                
-                // Add search event listener
-                setTimeout(() => {
-                  const searchInput = document.getElementById('searchInput');
-                  if (searchInput) {
-                    searchInput.addEventListener('keyup', function(e) {
-                      if (e.key === 'Enter') {
-                        performSearch();
-                      }
-                    });
-                  }
-                }, 100);
-              } else {
-                resultDiv.innerHTML = createNonArrayTable(data);
-              }
-              resultDiv.style.display = 'block';
-              
-          } catch (error) {
-              resultDiv.className = 'success';
-              resultDiv.innerHTML = `
-                <div class="summary">
-                  <h4>Server Response</h4>
-                </div>
-                <div class="table-container">
-                  <table>
-                    <thead><tr><th>Response</th></tr></thead>
-                    <tbody><tr><td>${responseText}</td></tr></tbody>
-                  </table>
-                </div>
-              `;
-              resultDiv.style.display = 'block';
-          }
-      } else {
-          const errorText = await response.text();
-          resultDiv.className = 'error';
-          resultDiv.innerHTML = `
-            <div class="summary">
-              <h4>Error Response</h4>
-            </div>
-            <div class="table-container">
-              <table>
-                <thead><tr><th>Error Details</th></tr></thead>
-                <tbody><tr><td class="status-error">${errorText}</td></tr></tbody>
-              </table>
-            </div>
-          `;
-          resultDiv.style.display = 'block';
-      }
+      // Load initial raw data
+      updateButtonStates(document.getElementById('rawButton'));
+      await loadData('raw');
     });
 
     document.getElementById('uploadForm').addEventListener('submit', async function (e) {
@@ -588,7 +656,8 @@
             const data = JSON.parse(responseText);
             resultDiv.className = 'success';
             if (Array.isArray(data) && data.length > 0) {
-              resultDiv.innerHTML = createTable(data);
+              resultDiv.innerHTML = createTable(data, 'raw');
+              updateButtonStates(document.getElementById('rawButton'));
               
               // Add search event listener
               setTimeout(() => {
@@ -663,12 +732,15 @@
       }
     });
 
-    document.getElementById('rawButton').addEventListener('click', function() {
-      window.location.href = 'redis-timeseries.php?raw=true';
+    // Fixed button event listeners - use AJAX instead of window.location
+    document.getElementById('rawButton').addEventListener('click', async function() {
+      updateButtonStates(this);
+      await loadData('raw');
     });
 
-    document.getElementById('agrButton').addEventListener('click', function() {
-      window.location.href = 'redis-timeseries.php?agr=true';
+    document.getElementById('agrButton').addEventListener('click', async function() {
+      updateButtonStates(this);
+      await loadData('agr');
     });
 
   </script>

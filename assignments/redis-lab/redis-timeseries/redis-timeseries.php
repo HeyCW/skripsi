@@ -3,7 +3,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 $redis = new Predis\Client([
     'scheme' => 'tcp',
-    'host'   => '13.57.221.183',
+    'host'   => '127.0.0.1',
     'port'   => 6379,
     'timeout'=> 5
 ]);
@@ -11,15 +11,14 @@ $redis = new Predis\Client([
 function uploadCsv($file) {
     global $redis;
     
-    $file_tmp = $file; // atau $_FILES['file']['tmp_name'] jika dari upload
+    $file_tmp = $file;
     $handle = fopen($file_tmp, 'r');
-    $label = basename($file); // atau $_FILES['file']['name']
+    $label = basename($file);
     $label_compacted = $label.'_compacted';
     
     if ($handle !== false) {
         // Read the first row to use as headers
         $headers = fgetcsv($handle, 0, ',');
-        print_r($headers);
         
         foreach($headers as $h){
             if($h == 'dt') continue;
@@ -40,19 +39,14 @@ function uploadCsv($file) {
             
             // Create the rule berdasarkan nama kolom
             if(str_contains($h, 'Average')){
-                // For average
                 $redis->executeRaw(['TS.CREATERULE', $h, $h.'_compacted', 'AGGREGATION', 'avg', 31556952000]); 
             } else if(str_contains($h, 'Max')){
-                // For maximum  
                 $redis->executeRaw(['TS.CREATERULE', $h, $h.'_compacted', 'AGGREGATION', 'max', 31556952000]);
             } else if(str_contains($h, 'Min')){
-                // For minimum
                 $redis->executeRaw(['TS.CREATERULE', $h, $h.'_compacted', 'AGGREGATION', 'min', 31556952000]);
             } else if(str_contains($h, 'Sum')){
-                // For sum
                 $redis->executeRaw(['TS.CREATERULE', $h, $h.'_compacted', 'AGGREGATION', 'sum', 31556952000]);
             } else {
-                // Default as average
                 $redis->executeRaw(['TS.CREATERULE', $h, $h.'_compacted', 'AGGREGATION', 'avg', 31556952000]);
             }
         }
@@ -82,41 +76,14 @@ function uploadCsv($file) {
         // Beri waktu untuk compaction berjalan
         sleep(2);
         
-        // Process reading data from TimeSeries
-        $data = [];
-        $dataCompact = [];
-        $dataGraph = [];
-        $dataCompactGraph = [];
+        return true; // Return success
         
-        foreach($headers as $h){
-            if($h == 'dt') continue;
-            
-            // Ambil data raw
-            $temp = $redis->executeRaw(['TS.RANGE', $h, '-', '+']);
-            for($i = 0; $i < count($temp); $i++){
-                $dataGraph[$h][] = [gmdate('d-m-Y', ($temp[$i][0]/1000)), floatval($temp[$i][1])];
-                if(!isset($data[$i])) $data[$i][] = gmdate('d-m-Y', ($temp[$i][0]/1000));
-                $data[$i][] = floatval($temp[$i][1]);
-            }
-            
-            // Ambil data compacted
-            try {
-                $tempCompact = $redis->executeRaw(['TS.RANGE', $h.'_compacted', '-', '+']);
-                for($j = 0; $j < count($tempCompact); $j++){
-                    $dataCompactGraph[$h.'_compacted'][] = [gmdate('d-m-Y', ($tempCompact[$j][0]/1000)), floatval($tempCompact[$j][1])];
-                    if(!isset($dataCompact[$j])) $dataCompact[$j][] = gmdate('d-m-Y', ($tempCompact[$j][0]/1000));
-                    $dataCompact[$j][] = floatval($tempCompact[$j][1]);
-                }
-            } catch (Exception $e) {
-                echo "Warning: Compacted data untuk $h belum tersedia: " . $e->getMessage() . "\n";
-            }
-        }
     } else {
         throw new Exception('Could not open CSV file');
     }
 }
 
-function getDataFromRedis() {
+function getDataFromRedis($filterCompacted = false) {
     global $redis;
     $data = [];
     $allKeys = [];
@@ -124,23 +91,46 @@ function getDataFromRedis() {
     // Ambil semua keys terlebih dahulu
     $keys = $redis->keys('*');
     
+    // Filter keys berdasarkan parameter
+    if ($filterCompacted) {
+        // Hanya ambil keys yang bukan compacted (tidak mengandung '_compacted')
+        $keys = array_filter($keys, function($key) {
+            return strpos($key, '_compacted') === false;
+        });
+    }
+    
     // Kumpulkan semua data dari Redis
     $rawData = [];
     foreach ($keys as $key) {
-        $temp = $redis->executeRaw(['TS.RANGE', $key, '-', '+']);
-        if ($temp === false) {
-            continue;
-        }
-        
-        $allKeys[] = $key; // Simpan key untuk header kolom
-        
-        for ($i = 0; $i < count($temp); $i++) {
-            $timestamp = $temp[$i][0];
-            $value = floatval($temp[$i][1]);
-            $date = gmdate('Y-m-d', ($timestamp / 1000));
+        try {
+            $temp = $redis->executeRaw(['TS.RANGE', $key, '-', '+']);
             
-            // Struktur: $rawData[tanggal][key] = value
-            $rawData[$date][$key] = $value;
+            // Cek apakah $temp adalah array yang valid
+            if (!is_array($temp) || empty($temp)) {
+                continue; // Skip jika bukan array atau kosong
+            }
+            
+            $allKeys[] = $key; // Simpan key untuk header kolom
+            
+            // Pastikan $temp adalah array sebelum di-count
+            for ($i = 0; $i < count($temp); $i++) {
+                // Validasi struktur data
+                if (!is_array($temp[$i]) || count($temp[$i]) < 2) {
+                    continue; // Skip jika struktur tidak valid
+                }
+                
+                $timestamp = $temp[$i][0];
+                $value = floatval($temp[$i][1]);
+                $date = gmdate('Y-m-d', ($timestamp / 1000));
+                
+                // Struktur: $rawData[tanggal][key] = value
+                $rawData[$date][$key] = $value;
+            }
+            
+        } catch (Exception $e) {
+            // Skip key yang bermasalah
+            error_log("Error processing key '$key': " . $e->getMessage());
+            continue;
         }
     }
     
@@ -161,23 +151,89 @@ function getDataFromRedis() {
         $tableData[] = $row;
     }
     
-    // Return sebagai JSON
-    echo json_encode($tableData);
+    return $tableData;
 }
 
+// Set content type to JSON
+header('Content-Type: application/json');
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
-    // Upload logic sama
+    // Upload logic
     $file = $_FILES['csv_file']['tmp_name'];
     if (is_uploaded_file($file)) {
         try {
             uploadCsv($file);
-            echo 'CSV uploaded successfully';
+            
+            // PERUBAHAN UTAMA: Setelah upload berhasil, langsung return data
+            $data = getDataFromRedis(true); // true = filter compacted keys (raw data only)
+            echo json_encode($data);
+            
         } catch (Exception $e) {
-            echo 'Error: ' . $e->getMessage();
+            // Return error dalam format JSON
+            echo json_encode(['error' => $e->getMessage()]);
         }
+    } else {
+        echo json_encode(['error' => 'File upload failed']);
     }
+    
 } elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    getDataFromRedis();
+    // Handle GET requests
+    if (isset($_GET['raw']) && $_GET['raw'] === 'true') {
+        // Return raw data (non-compacted)
+        $data = getDataFromRedis(true);
+        echo json_encode($data);
+    } elseif (isset($_GET['agr']) && $_GET['agr'] === 'true') {
+        // Return aggregated data (compacted only)
+        $keys = $redis->keys('*_compacted');
+        $rawData = [];
+        $allKeys = [];
+        
+        foreach ($keys as $key) {
+            try {
+                $temp = $redis->executeRaw(['TS.RANGE', $key, '-', '+']);
+                
+                if (!is_array($temp) || empty($temp)) {
+                    continue;
+                }
+                
+                $allKeys[] = $key;
+                
+                for ($i = 0; $i < count($temp); $i++) {
+                    if (!is_array($temp[$i]) || count($temp[$i]) < 2) {
+                        continue;
+                    }
+                    
+                    $timestamp = $temp[$i][0];
+                    $value = floatval($temp[$i][1]);
+                    $date = gmdate('Y-m-d', ($timestamp / 1000));
+                    
+                    $rawData[$date][$key] = $value;
+                }
+                
+            } catch (Exception $e) {
+                continue;
+            }
+        }
+        
+        ksort($rawData);
+        
+        $tableData = [];
+        foreach ($rawData as $date => $keyValues) {
+            $row = ['date' => $date];
+            
+            foreach ($allKeys as $key) {
+                $row[$key] = isset($keyValues[$key]) ? $keyValues[$key] : null;
+            }
+            
+            $tableData[] = $row;
+        }
+        
+        echo json_encode($tableData);
+    } else {
+        // Return all data (default)
+        $data = getDataFromRedis(true);
+        echo json_encode($data);
+    }
     exit;
 }
 ?>

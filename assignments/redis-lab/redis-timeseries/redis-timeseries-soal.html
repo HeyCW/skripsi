@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redis TimeSeries Temperature Analysis - SOAL LATIHAN</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .exercise-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        .todo-item {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .data-buttons {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .data-buttons button {
+            background-color: #17a2b8;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .data-buttons button:hover {
+            background-color: #138496;
+        }
+        
+        .data-buttons button.active {
+            background-color: #28a745;
+        }
+        
+        .upload-form {
+            border: 2px dashed #ccc;
+            padding: 40px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+        }
+        
+        .upload-form:hover {
+            border-color: #999;
+        }
+        
+        input[type="file"] {
+            margin: 20px 0;
+            padding: 10px;
+        }
+        
+        button {
+            background-color: #ff6b6b;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background-color: #ee5a24;
+        }
+        
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        tr:hover {
+            background-color: #e9ecef;
+        }
+        
+        .summary {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .summary h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        
+        .code-hint {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            color: #0066cc;
+            padding: 10px 15px;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌡️ Redis TimeSeries Temperature Analysis - SOAL LATIHAN</h1>
+            <p>Lengkapi kode berikut untuk membuat aplikasi analisis data temperatur dengan Redis TimeSeries</p>
+        </div>
+        
+        <div class="exercise-info">
+            <h3>📝 TUGAS MAHASISWA:</h3>
+            <p>Lengkapi bagian kode yang kosong (ditandai dengan TODO) untuk membuat aplikasi analisis data temperatur yang berfungsi penuh menggunakan Redis TimeSeries.</p>
+            
+            <h4 style="margin-top: 15px; color: #cc0000;">⚙️ BACKEND PHP (redis-timeseries.php):</h4>
+            <div class="todo-item">TODO 1: Lengkapi Redis connection configuration</div>
+            <div class="todo-item">TODO 2: Lengkapi function uploadCsv() - buat TimeSeries dan aturan aggregation</div>
+            <div class="todo-item">TODO 3: Lengkapi function getDataFromRedis() - ambil raw data dari Redis TimeSeries</div>
+            <div class="todo-item">TODO 4: Lengkapi aggregation rule dengan window yearly yang tepat</div>
+            <div class="todo-item">TODO 5: Lengkapi function untuk ambil aggregated data dengan filter compacted keys</div>
+            <div class="todo-item">TODO 6: Lengkapi HTTP request handling </div>
+            
+            
+            <h4 style="margin-top: 15px; color: #0066cc;">🌐 FRONTEND JavaScript:</h4>
+            <div class="todo-item">TODO 7: Lengkapi function loadData() untuk fetch data RAW dan AGR</div>
+            <div class="todo-item">TODO 8: Lengkapi function createTable() untuk display data dengan pagination</div>
+            <div class="todo-item">TODO 9: Lengkapi event listener untuk button RAW dan AGR</div>
+            <div class="todo-item">TODO 10: Lengkapi upload form handler dengan response JSON</div>
+        </div>
+        
+        <div class="content">
+            <div class="data-buttons">
+                <button id="rawButton">RAW Data</button>
+                <button id="agrButton">Aggregated Data</button>
+            </div>
+
+            <h1>Upload CSV to Redis TimeSeries</h1>
+            
+            <div class="upload-form">
+                <h3>Select CSV File</h3>
+                <p>Choose a CSV file containing temperature data</p>
+                
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <input type="file" name="csv_file" accept=".csv" required />
+                    <br>
+                    <button type="submit" id="submitBtn">
+                        <span id="btnText">Upload</span>
+                    </button>
+                </form>
+            </div>
+            
+            <div id="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for pagination
+        let currentData = [];
+        let filteredData = [];
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let currentDataType = 'raw';
+
+        // TODO 7: LENGKAPI FUNCTION INI
+        // Tugas: Buat function untuk fetch data RAW atau AGR dari server
+        async function loadData(dataType) {
+            const resultDiv = document.getElementById('result');
+            
+            // Show loading
+            resultDiv.className = 'loading';
+            resultDiv.innerHTML = `
+                <div class="summary">
+                    <h4>Loading</h4>
+                    <p>Fetching ${dataType === 'raw' ? 'raw' : 'aggregated'} data...</p>
+                </div>
+            `;
+            resultDiv.style.display = 'block';
+            
+            try {
+                // HINT: Buat URL berdasarkan dataType
+                // HINT: Jika 'raw' maka 'redis-timeseries.php?raw=true'  
+                // HINT: Jika 'agr' maka 'redis-timeseries.php?agr=true'
+                // HINT: Gunakan fetch() untuk request
+                
+                // KODE ANDA DI SINI:
+                
+                
+            } catch (error) {
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = `
+                    <div class="summary">
+                        <h4>Network Error</h4>
+                        <p><span style="color: #721c24; font-weight: bold;">Connection failed</span></p>
+                    </div>
+                `;
+            }
+        }
+
+        // TODO 8: LENGKAPI FUNCTION INI
+        // Tugas: Buat function untuk create table dengan pagination
+        function createTable(data, dataType = 'raw') {
+            if (!Array.isArray(data) || data.length === 0) {
+                return '<p>No data to display</p>';
+            }
+            
+            // Store data globally
+            currentData = data;
+            filteredData = [...data];
+            currentPage = 1;
+            currentDataType = dataType;
+            
+            let html = '';
+            
+            // Create summary
+            html += `<div class="summary">
+                <h4>Data Summary</h4>
+                <p><strong>Data Type:</strong> ${dataType === 'raw' ? 'Raw Data' : 'Aggregated Data'}</p>
+                <p><strong>Total Records:</strong> ${data.length}</p>
+                <p><strong>Status:</strong> <span style="color: #155724; font-weight: bold;">Success</span></p>
+            </div>`;
+            
+            // HINT: Buat table container dengan class 'table-container'
+            
+            // KODE ANDA DI SINI:
+            
+            
+            return html;
+        }
+
+        // Function to update button states
+        function updateButtonStates(activeButton) {
+            const rawBtn = document.getElementById('rawButton');
+            const agrBtn = document.getElementById('agrButton');
+            
+            rawBtn.classList.remove('active');
+            agrBtn.classList.remove('active');
+            
+            if (activeButton) {
+                activeButton.classList.add('active');
+            }
+        }
+
+        // Load initial data on page load
+        document.addEventListener('DOMContentLoaded', async function () {
+            updateButtonStates(document.getElementById('rawButton'));
+            await loadData('raw');
+        });
+
+        // TODO 9: LENGKAPI EVENT LISTENER UNTUK BUTTON RAW DAN AGR
+        // Tugas: Buat event listener untuk button RAW dan AGR
+        
+        // HINT: Gunakan addEventListener dengan event 'click'
+        // HINT: Function harus async untuk menggunakan await
+        
+        // KODE ANDA DI SINI - LENGKAPI KEDUA EVENT LISTENER:
+        document.getElementById('rawButton').addEventListener('click', async function() {
+            // LENGKAPI DISINI
+        });
+
+        document.getElementById('agrButton').addEventListener('click', async function() {
+            // LENGKAPI DISINI  
+        });
+
+        // TODO 10: LENGKAPI UPLOAD FORM HANDLER
+        // Tugas: Buat event listener untuk form submission
+        document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const btnText = document.getElementById('btnText');
+            const resultDiv = document.getElementById('result');
+            
+            submitBtn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span>Uploading...';
+            
+            resultDiv.className = 'loading';
+            resultDiv.innerHTML = `
+                <div class="summary">
+                    <h4>Processing</h4>
+                    <p>Uploading and processing CSV file...</p>
+                </div>
+            `;
+            resultDiv.style.display = 'block';
+            
+            const formData = new FormData(this);
+            
+            try {
+                // HINT: Gunakan fetch() dengan method POST
+                // HINT: Body adalah formData  
+                // HINT: Parse response sebagai text
+                // HINT: Coba JSON.parse() untuk response
+                // HINT: Jika berhasil, panggil createTable() dan updateButtonStates()
+                
+                // KODE ANDA DI SINI:
+                
+                
+            } catch (error) {
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = `
+                    <div class="summary">
+                        <h4>Upload Failed</h4>
+                        <p><span style="color: #721c24; font-weight: bold;">Network Error</span></p>
+                    </div>
+                `;
+            } finally {
+                submitBtn.disabled = false;
+                btnText.innerHTML = 'Upload';
+            }
+        });
+
+        // Hide result when file changes
+        document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const resultDiv = document.getElementById('result');
+                resultDiv.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
