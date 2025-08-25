@@ -100,9 +100,9 @@ try {
                 // Get parameters
                 $page = max(1, intval($_GET['page'] ?? 1));
                 $limit = max(1, min(100, intval($_GET['limit'] ?? 50))); // Max 100 per page
-                $search = trim($_GET['search'] ?? '');
-                $borough = trim($_GET['borough'] ?? '');
-                $cuisine = trim($_GET['cuisine'] ?? '');
+                $search = $_GET['search'] ?? '';
+                $borough = $_GET['borough'] ?? '';
+                $cuisine = $_GET['cuisine'] ?? '';
                 $maxScore = $_GET['max_score'] ?? '';
                 $sortBy = $_GET['sort_by'] ?? 'name';
                 $sortDir = ($_GET['sort_dir'] ?? 'asc') === 'desc' ? -1 : 1;
@@ -131,75 +131,49 @@ try {
                     $filter['cuisine'] = $cuisine;
                 }
                 
-                // Debug: log the filter being used
-                error_log("Filter being used: " . json_encode($filter));
-                error_log("Max Score: " . $maxScore);
-                
                 // Score filter - find restaurants where latest grade score <= maxScore
                 if (!empty($maxScore) && is_numeric($maxScore)) {
                     $maxScoreNum = floatval($maxScore);
                     
                     // Use aggregation pipeline to filter by latest score
-                    $pipeline = [];
-                    
-                    // Add initial match stage only if filter is not empty
-                    if (!empty($filter)) {
-                        $pipeline[] = ['$match' => $filter];
-                    }
-                    
-                    // Add latestGrade field
-                    $pipeline[] = [
-                        '$addFields' => [
-                            'latestGrade' => [
-                                '$arrayElemAt' => [
-                                    [
-                                        '$sortArray' => [
-                                            'input' => '$grades',
-                                            'sortBy' => ['date' => -1]
-                                        ]
-                                    ],
-                                    0
+                    $pipeline = [
+                        ['$match' => $filter],
+                        [
+                            '$addFields' => [
+                                'latestGrade' => [
+                                    '$arrayElemAt' => [
+                                        [
+                                            '$sortArray' => [
+                                                'input' => '$grades',
+                                                'sortBy' => ['date' => -1] // Sort by date descending
+                                            ]
+                                        ],
+                                        0 // Get first element (latest)
+                                    ]
                                 ]
+                            ]
+                        ],
+                        [
+                            '$match' => [
+                                'latestGrade.score' => ['$lte' => $maxScoreNum]
                             ]
                         ]
                     ];
-                    
-                    // Match latest score condition
-                    $pipeline[] = [
-                        '$match' => [
-                            'latestGrade.score' => ['$lte' => $maxScoreNum],
-                            'latestGrade' => ['$exists' => true, '$ne' => null]
-                        ]
-                    ];
-                    
-                    // Debug: log the pipeline
-                    error_log("Aggregation pipeline: " . json_encode($pipeline));
                     
                     // Count total matching documents
                     $countPipeline = array_merge($pipeline, [
                         ['$count' => 'total']
                     ]);
                     
-                    try {
-                        $countResult = $resto->aggregate($countPipeline)->toArray();
-                        $totalCount = !empty($countResult) ? $countResult[0]['total'] : 0;
-                    } catch (Exception $e) {
-                        // If aggregation fails, fallback to 0
-                        $totalCount = 0;
-                        error_log("Count aggregation error: " . $e->getMessage());
-                    }
+                    $countResult = $resto->aggregate($countPipeline)->toArray();
+                    $totalCount = $countResult[0]['total'] ?? 0;
                     
                     // Add sorting and pagination
                     $pipeline[] = ['$sort' => [$sortBy => $sortDir]];
                     $pipeline[] = ['$skip' => ($page - 1) * $limit];
                     $pipeline[] = ['$limit' => $limit];
                     
-                    try {
-                        $cursor = $resto->aggregate($pipeline);
-                    } catch (Exception $e) {
-                        // If aggregation fails, use empty result
-                        throw new Exception("Score filtering error: " . $e->getMessage());
-                    }
+                    $cursor = $resto->aggregate($pipeline);
                     
                 } else {
                     // Simple query without score filtering
@@ -287,54 +261,7 @@ try {
             }
             break;
             
-        case 'all-restaurants':
-            // Fallback: Get all restaurants (for backward compatibility)
-            try {
-                $cursor = $resto->find([]);
-                $restaurants = [];
-                
-                foreach ($cursor as $doc) {
-                    $restaurant = [];
-                    foreach ($doc as $key => $value) {
-                        if (is_string($value) || is_numeric($value)) {
-                            $restaurant[$key] = $value;
-                        } else if (is_array($value) || is_object($value)) {
-                            if ($key === 'grades') {
-                                $grades = [];
-                                foreach ($value as $grade) {
-                                    $gradeItem = [];
-                                    if (isset($grade['date'])) {
-                                        $date = $grade['date'];
-                                        if (is_object($date) && method_exists($date, 'toDateTime')) {
-                                            $gradeItem['date'] = $date->toDateTime()->format('Y-m-d');
-                                        } else {
-                                            $gradeItem['date'] = (string) $date;
-                                        }
-                                    }
-                                    if (isset($grade['grade'])) {
-                                        $gradeItem['grade'] = $grade['grade'];
-                                    }
-                                    if (isset($grade['score'])) {
-                                        $gradeItem['score'] = $grade['score'];
-                                    }
-                                    $grades[] = $gradeItem;
-                                }
-                                $restaurant[$key] = $grades;
-                            } else {
-                                $restaurant[$key] = json_decode(json_encode($value), true);
-                            }
-                        }
-                    }
-                    $restaurants[] = $restaurant;
-                }
-                
-                sendResponse(true, $restaurants);
-                
-            } catch (Exception $e) {
-                sendResponse(false, null, 'Error getting all restaurants: ' . $e->getMessage());
-            }
-            break;
-            
+
         case 'debug-info':
             // Debug endpoint
             try {
