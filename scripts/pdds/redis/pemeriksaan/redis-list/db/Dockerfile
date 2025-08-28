@@ -1,6 +1,10 @@
-FROM mysql:8
+FROM redis:7-alpine
 
-ENV MYSQL_ROOT_PASSWORD=example
-ENV MYSQL_DATABASE=skripsi
+# Set working directory
+WORKDIR /data
 
-COPY init.sql /docker-entrypoint-initdb.d/
+# Expose Redis port
+EXPOSE 6379
+
+# Start Redis with custom config
+CMD ["redis-server"]

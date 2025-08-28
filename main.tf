@@ -61,24 +61,28 @@ module "ec2" {
   create_eip             = var.create_eip
 }
 
-module "cloud9" {
-  source = "./modules/cloud9"
+# module "cloud9" {
+#   source = "./modules/cloud9"
 
-  project_name                =  var.project_name  
-  environment_name            = var.cloud9_environment_name
-  image_id                    = var.cloud9_image_id
-  instance_type               = var.cloud9_instance_type
-  description                 = var.cloud9_description
-  automatic_stop_time_minutes = var.cloud9_automatic_stop_time_minutes
-  subnet_id                   = module.network.public_subnet_ids[0]
-  tags                        = var.cloud9_tags
-  
+#   project_name                =  var.project_name  
+#   environment_name            = var.cloud9_environment_name
+#   image_id                    = var.cloud9_image_id
+#   instance_type               = var.cloud9_instance_type
+#   description                 = var.cloud9_description
+#   automatic_stop_time_minutes = var.cloud9_automatic_stop_time_minutes
+#   subnet_id                   = module.network.public_subnet_ids[0]
+#   tags                        = var.cloud9_tags 
+# }
+
+module "ecs-fargate" {
+  source = "./modules/ecs-fargate"
+  subnets = [ module.network.public_subnet_ids[0], module.network.public_subnet_ids[1] ]
+  security_groups = [ module.network.web_sg_id ]
 }
 
 data "http" "setup" {
   url = "https://raw.githubusercontent.com/HeyCW/skripsi/refs/heads/main/assignments/redis-lab/redis-timeseries/setup.sh"
 }
-
 
 resource "aws_s3_object" "setup" {
   bucket       = module.bucket.bucket_id
@@ -86,6 +90,8 @@ resource "aws_s3_object" "setup" {
   content      = data.http.setup.response_body
   content_type = "application/x-httpd-php"
 }
+
+
 
 # locals {
 #   # Debug user data script content

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+# Login ke ECR
+aws ecr get-login-password --region us-east-1 \
+  | docker login --username AWS --password-stdin 562523702594.dkr.ecr.us-east-1.amazonaws.com
+
+# Build image PHP app
+docker build -t php-app .
+
+docker image build -t redis-db .
+
+# Tag supaya cocok sama repo ECR
+docker tag php-app:latest 562523702594.dkr.ecr.us-east-1.amazonaws.com/php-app:latest
+docker tag redis-db:latest 562523702594.dkr.ecr.us-east-1.amazonaws.com/redis-db:latest
+
+# Push
+docker push 562523702594.dkr.ecr.us-east-1.amazonaws.com/php-app:latest
+docker push 562523702594.dkr.ecr.us-east-1.amazonaws.com/redis-db:latest
