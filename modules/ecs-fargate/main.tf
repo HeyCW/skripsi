@@ -17,6 +17,53 @@ resource "aws_cloudwatch_log_group" "ecs_my_app_service" {
   }
 }
 
+# Bucket untuk export CloudWatch Logs
+resource "aws_s3_bucket" "ecs_logs" {
+  bucket        = "my-log-bucket-skripsi" 
+  force_destroy = true
+
+  tags = {
+    Project     = "skripsi"
+    Environment = "dev"
+    ManagedBy   = "terraform"
+  }
+}
+
+# Bucket policy supaya CloudWatch Logs bisa tulis
+resource "aws_s3_bucket_policy" "ecs_logs_policy" {
+  bucket = aws_s3_bucket.ecs_logs.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowCWLogsExport",
+        Effect    = "Allow",
+        Principal = {
+          Service = "logs.amazonaws.com"
+        },
+        Action   = "s3:GetBucketAcl",
+        Resource = "arn:aws:s3:::${aws_s3_bucket.ecs_logs.bucket}"
+      },
+      {
+        Sid       = "AllowCWLogsWrite",
+        Effect    = "Allow",
+        Principal = {
+          Service = "logs.amazonaws.com"
+        },
+        Action   = "s3:PutObject",
+        Resource = "arn:aws:s3:::${aws_s3_bucket.ecs_logs.bucket}/*",
+        Condition = {
+          StringEquals = {
+            "s3:x-amz-acl" = "bucket-owner-full-control"
+          }
+        }
+      }
+    ]
+  })
+}
+
+
 
 
 # --- ECS Cluster ---
