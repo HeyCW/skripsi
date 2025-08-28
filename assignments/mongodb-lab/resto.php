@@ -100,9 +100,9 @@ try {
                 // Get parameters
                 $page = max(1, intval($_GET['page'] ?? 1));
                 $limit = max(1, min(100, intval($_GET['limit'] ?? 50))); // Max 100 per page
-                $search = trim($_GET['search'] ?? '');
-                $borough = trim($_GET['borough'] ?? '');
-                $cuisine = trim($_GET['cuisine'] ?? '');
+                $search = $_GET['search'] ?? '';
+                $borough = $_GET['borough'] ?? '';
+                $cuisine = $_GET['cuisine'] ?? '';
                 $maxScore = $_GET['max_score'] ?? '';
                 $sortBy = $_GET['sort_by'] ?? 'name';
                 $sortDir = ($_GET['sort_dir'] ?? 'asc') === 'desc' ? -1 : 1;
@@ -284,54 +284,6 @@ try {
                 
             } catch (Exception $e) {
                 sendResponse(false, null, 'Error getting restaurants: ' . $e->getMessage());
-            }
-            break;
-            
-        case 'all-restaurants':
-            // Fallback: Get all restaurants (for backward compatibility)
-            try {
-                $cursor = $resto->find([]);
-                $restaurants = [];
-                
-                foreach ($cursor as $doc) {
-                    $restaurant = [];
-                    foreach ($doc as $key => $value) {
-                        if (is_string($value) || is_numeric($value)) {
-                            $restaurant[$key] = $value;
-                        } else if (is_array($value) || is_object($value)) {
-                            if ($key === 'grades') {
-                                $grades = [];
-                                foreach ($value as $grade) {
-                                    $gradeItem = [];
-                                    if (isset($grade['date'])) {
-                                        $date = $grade['date'];
-                                        if (is_object($date) && method_exists($date, 'toDateTime')) {
-                                            $gradeItem['date'] = $date->toDateTime()->format('Y-m-d');
-                                        } else {
-                                            $gradeItem['date'] = (string) $date;
-                                        }
-                                    }
-                                    if (isset($grade['grade'])) {
-                                        $gradeItem['grade'] = $grade['grade'];
-                                    }
-                                    if (isset($grade['score'])) {
-                                        $gradeItem['score'] = $grade['score'];
-                                    }
-                                    $grades[] = $gradeItem;
-                                }
-                                $restaurant[$key] = $grades;
-                            } else {
-                                $restaurant[$key] = json_decode(json_encode($value), true);
-                            }
-                        }
-                    }
-                    $restaurants[] = $restaurant;
-                }
-                
-                sendResponse(true, $restaurants);
-                
-            } catch (Exception $e) {
-                sendResponse(false, null, 'Error getting all restaurants: ' . $e->getMessage());
             }
             break;
             

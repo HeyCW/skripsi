@@ -1,4 +1,7 @@
 <?php
+// SOAL LATIHAN - Restaurant Data Backend Filtering
+// Lengkapi bagian TODO untuk membuat aplikasi yang berfungsi penuh
+
 // Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -29,12 +32,15 @@ function sendResponse($success, $data = null, $error = null, $meta = null) {
 }
 
 try {
-    // Load Composer autoloader
-    require_once 'vendor/autoload.php';
+    // TODO 1: LENGKAPI MONGODB CONNECTION CONFIGURATION DAN ERROR HANDLING
+    // Tugas: Load Composer autoloader dan buat connection ke MongoDB
+    // HINT: Gunakan MongoDB\Client
+    // HINT: Select database 'restaurant_db' dan collection 'restaurants'
+    // HINT: Tambahkan error handling untuk connection failure
     
-    // Connect to MongoDB
-    $client = new MongoDB\Client('mongodb://localhost:27017');
-    $resto = $client->selectDatabase('restaurant_db')->selectCollection('restaurants');
+    // KODE ANDA DI SINI:
+    
+    
     
     // Get the requested action
     $action = $_GET['action'] ?? '';
@@ -46,155 +52,61 @@ try {
             sendResponse(true, ['message' => 'Database connection successful']);
             break;
             
-        case 'count':
-            // Count total restaurants
-            try {
-                $count = $resto->countDocuments();
-                sendResponse(true, ['total_restaurants' => $count]);
-            } catch (Exception $e) {
-                sendResponse(false, null, 'Error counting restaurants: ' . $e->getMessage());
-            }
-            break;
-            
-        case 'sample':
-            // Get sample restaurant
-            try {
-                $sample = $resto->findOne();
-                if ($sample) {
-                    sendResponse(true, [
-                        'name' => $sample['name'] ?? 'N/A',
-                        'borough' => $sample['borough'] ?? 'N/A',
-                        'cuisine' => $sample['cuisine'] ?? 'N/A',
-                        'restaurant_id' => $sample['restaurant_id'] ?? 'N/A'
-                    ]);
-                } else {
-                    sendResponse(false, null, 'No restaurants found in collection');
-                }
-            } catch (Exception $e) {
-                sendResponse(false, null, 'Error getting sample: ' . $e->getMessage());
-            }
-            break;
-            
+        // TODO 2: LENGKAPI FUNCTION GETFILTEROPTIONS()
+        // Tugas: Ambil unique boroughs dan cuisines untuk dropdown filters
         case 'filter-options':
-            // Get unique boroughs and cuisines for filter dropdowns
             try {
-                $boroughs = $resto->distinct('borough');
-                $cuisines = $resto->distinct('cuisine');
+                // HINT: Gunakan distinct() method untuk ambil unique values
+                // HINT: Sort arrays dan filter empty values
+                // HINT: Return dalam format ['boroughs' => [...], 'cuisines' => [...]]
                 
-                // Sort the arrays
-                sort($boroughs);
-                sort($cuisines);
+                // KODE ANDA DI SINI:
                 
-                sendResponse(true, [
-                    'boroughs' => array_values(array_filter($boroughs)),
-                    'cuisines' => array_values(array_filter($cuisines))
-                ]);
+                
             } catch (Exception $e) {
                 sendResponse(false, null, 'Error getting filter options: ' . $e->getMessage());
             }
             break;
             
+        // TODO 3-6: LENGKAPI CASE 'RESTAURANTS' UNTUK FILTERING DAN PAGINATION
         case 'restaurants':
-            // Get filtered restaurants with pagination
             try {
-                // Get parameters
-                $page = max(1, intval($_GET['page'] ?? 1));
-                $limit = max(1, min(100, intval($_GET['limit'] ?? 50))); // Max 100 per page
-                $search = $_GET['search'] ?? '';
-                $borough = $_GET['borough'] ?? '';
-                $cuisine = $_GET['cuisine'] ?? '';
-                $maxScore = $_GET['max_score'] ?? '';
-                $sortBy = $_GET['sort_by'] ?? 'name';
-                $sortDir = ($_GET['sort_dir'] ?? 'asc') === 'desc' ? -1 : 1;
+                // TODO 3: LENGKAPI PARAMETER EXTRACTION DAN VALIDATION
+                // HINT: Extract page, limit, search, borough, cuisine, maxScore, sortBy, sortDir
+                // HINT: Validate dan set default values
+                // HINT: Ensure page >= 1, limit between 1-100
                 
-                // Build MongoDB filter
-                $filter = [];
+                // KODE ANDA DI SINI:
                 
-                // Search filter (case-insensitive regex)
-                if (!empty($search)) {
-                    $filter['$or'] = [
-                        ['name' => ['$regex' => $search, '$options' => 'i']],
-                        ['cuisine' => ['$regex' => $search, '$options' => 'i']],
-                        ['borough' => ['$regex' => $search, '$options' => 'i']],
-                        ['address.street' => ['$regex' => $search, '$options' => 'i']],
-                        ['address.zipcode' => ['$regex' => $search, '$options' => 'i']]
-                    ];
-                }
                 
-                // Borough filter
-                if (!empty($borough)) {
-                    $filter['borough'] = $borough;
-                }
+                // TODO 4: LENGKAPI BUILDQUERY() - BUAT MONGODB FILTER
+                // HINT: Build $filter array untuk MongoDB query
+                // HINT: Search menggunakan $or dengan regex pattern matching
+                // HINT: Borough dan cuisine menggunakan exact match
                 
-                // Cuisine filter
-                if (!empty($cuisine)) {
-                    $filter['cuisine'] = $cuisine;
-                }
+                // KODE ANDA DI SINI:
                 
-                // Score filter - find restaurants where latest grade score <= maxScore
+                
+                // TODO 5: LENGKAPI SCORE FILTERING DAN AGGREGATION PIPELINE
+                // HINT: Jika maxScore ada, gunakan aggregation pipeline
+                // HINT: $addFields untuk latest grade, $match untuk score filter
+                // HINT: Jika tidak ada maxScore, gunakan simple find query
+                
                 if (!empty($maxScore) && is_numeric($maxScore)) {
                     $maxScoreNum = floatval($maxScore);
                     
-                    // Use aggregation pipeline to filter by latest score
-                    $pipeline = [
-                        ['$match' => $filter],
-                        [
-                            '$addFields' => [
-                                'latestGrade' => [
-                                    '$arrayElemAt' => [
-                                        [
-                                            '$sortArray' => [
-                                                'input' => '$grades',
-                                                'sortBy' => ['date' => -1] // Sort by date descending
-                                            ]
-                                        ],
-                                        0 // Get first element (latest)
-                                    ]
-                                ]
-                            ]
-                        ],
-                        [
-                            '$match' => [
-                                'latestGrade.score' => ['$lte' => $maxScoreNum]
-                            ]
-                        ]
-                    ];
+                    // KODE ANDA DI SINI - LENGKAPI AGGREGATION PIPELINE:
                     
-                    // Count total matching documents
-                    $countPipeline = array_merge($pipeline, [
-                        ['$count' => 'total']
-                    ]);
-                    
-                    $countResult = $resto->aggregate($countPipeline)->toArray();
-                    $totalCount = $countResult[0]['total'] ?? 0;
-                    
-                    // Add sorting and pagination
-                    $pipeline[] = ['$sort' => [$sortBy => $sortDir]];
-                    $pipeline[] = ['$skip' => ($page - 1) * $limit];
-                    $pipeline[] = ['$limit' => $limit];
-                    
-                    $cursor = $resto->aggregate($pipeline);
                     
                 } else {
-                    // Simple query without score filtering
+                    // TODO: LENGKAPI SIMPLE QUERY LOGIC
+                    // HINT: Count documents, build sort array, execute find dengan options
                     
-                    // Count total matching documents
-                    $totalCount = $resto->countDocuments($filter);
+                    // KODE ANDA DI SINI:
                     
-                    // Build sort array
-                    $sort = [$sortBy => $sortDir];
-                    
-                    // Execute query with pagination
-                    $options = [
-                        'sort' => $sort,
-                        'skip' => ($page - 1) * $limit,
-                        'limit' => $limit
-                    ];
-                    
-                    $cursor = $resto->find($filter, $options);
                 }
                 
-                // Process results
+                // Process results - Convert MongoDB documents to arrays
                 $restaurants = [];
                 foreach ($cursor as $doc) {
                     $restaurant = [];
@@ -232,36 +144,47 @@ try {
                     $restaurants[] = $restaurant;
                 }
                 
-                // Calculate pagination info
-                $totalPages = ceil($totalCount / $limit);
+                // TODO 6: LENGKAPI PAGINATION INFO DAN RESPONSE
+                // HINT: Calculate totalPages, build meta array dengan pagination info
+                // HINT: Include filters_applied dan sort information
                 
-                $meta = [
-                    'total_count' => $totalCount,
-                    'current_page' => $page,
-                    'per_page' => $limit,
-                    'total_pages' => $totalPages,
-                    'has_next' => $page < $totalPages,
-                    'has_prev' => $page > 1,
-                    'filters_applied' => [
-                        'search' => $search,
-                        'borough' => $borough,
-                        'cuisine' => $cuisine,
-                        'max_score' => $maxScore
-                    ],
-                    'sort' => [
-                        'column' => $sortBy,
-                        'direction' => $sortDir === 1 ? 'asc' : 'desc'
-                    ]
-                ];
+                // KODE ANDA DI SINI:
                 
-                sendResponse(true, $restaurants, null, $meta);
                 
             } catch (Exception $e) {
                 sendResponse(false, null, 'Error getting restaurants: ' . $e->getMessage());
             }
             break;
             
-
+        case 'count':
+            // Count total restaurants
+            try {
+                $count = $resto->countDocuments();
+                sendResponse(true, ['total_restaurants' => $count]);
+            } catch (Exception $e) {
+                sendResponse(false, null, 'Error counting restaurants: ' . $e->getMessage());
+            }
+            break;
+            
+        case 'sample':
+            // Get sample restaurant
+            try {
+                $sample = $resto->findOne();
+                if ($sample) {
+                    sendResponse(true, [
+                        'name' => $sample['name'] ?? 'N/A',
+                        'borough' => $sample['borough'] ?? 'N/A',
+                        'cuisine' => $sample['cuisine'] ?? 'N/A',
+                        'restaurant_id' => $sample['restaurant_id'] ?? 'N/A'
+                    ]);
+                } else {
+                    sendResponse(false, null, 'No restaurants found in collection');
+                }
+            } catch (Exception $e) {
+                sendResponse(false, null, 'Error getting sample: ' . $e->getMessage());
+            }
+            break;
+            
         case 'debug-info':
             // Debug endpoint
             try {
@@ -287,7 +210,7 @@ try {
                     'collection_used' => 'restaurants',
                     'available_actions' => [
                         'ping', 'count', 'sample', 'debug-info', 
-                        'filter-options', 'restaurants', 'all-restaurants'
+                        'filter-options', 'restaurants'
                     ]
                 ];
                 
@@ -298,7 +221,7 @@ try {
             break;
             
         default:
-            sendResponse(false, null, 'Invalid action. Available actions: ping, count, sample, debug-info, filter-options, restaurants, all-restaurants');
+            sendResponse(false, null, 'Invalid action. Available actions: ping, count, sample, debug-info, filter-options, restaurants');
             break;
     }
     
@@ -307,4 +230,3 @@ try {
 } catch (Exception $e) {
     sendResponse(false, null, 'Error: ' . $e->getMessage());
 }
-?>

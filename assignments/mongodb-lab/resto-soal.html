@@ -3,40 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restaurant Data Table - Backend Filtering</title>
+    <title>Restaurant Data Backend Filtering - SOAL LATIHAN</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             padding: 20px;
-            background-color: #f5f5f5;
         }
         
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
             overflow: hidden;
         }
         
         .header {
-            background: linear-gradient(135deg, #007bff, #0056b3);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 30px;
             text-align: center;
         }
         
         .header h1 {
-            margin: 0;
-            font-size: 2.5em;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
             font-weight: 300;
         }
         
         .header p {
-            margin: 10px 0 0 0;
+            font-size: 1.1rem;
             opacity: 0.9;
+        }
+        
+        .exercise-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        .todo-item {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        
+        .code-hint {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            color: #0066cc;
+            padding: 10px 15px;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
         }
         
         .controls {
@@ -44,28 +82,45 @@
             background: #f8f9fa;
             border-bottom: 1px solid #dee2e6;
             display: flex;
-            flex-wrap: wrap;
+            flex-direction: column;
             gap: 15px;
-            align-items: center;
+        }
+        
+        .search-row {
+            width: 100%;
         }
         
         .search-box {
-            flex: 1;
-            min-width: 250px;
+            width: 100%;
         }
         
         .search-box input {
             width: 100%;
-            padding: 10px 15px;
+            padding: 12px 15px;
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .filter-controls-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
         }
         
         .filter-group {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
+            white-space: nowrap;
+        }
+        
+        .filter-group label {
+            font-weight: 500;
+            color: #495057;
+            min-width: fit-content;
         }
         
         .filter-group select, .filter-group input {
@@ -73,6 +128,12 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             background: white;
+            min-width: 140px;
+        }
+        
+        .filter-group input[type="number"] {
+            min-width: 100px;
+            width: 100px;
         }
         
         .stats {
@@ -328,116 +389,68 @@
             border: 1px solid #ddd;
             border-radius: 4px;
         }
-        
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            
-            .controls {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 12px;
-                padding: 15px;
-            }
-            
-            .search-box {
-                min-width: auto;
-            }
-            
-            .search-box input {
-                font-size: 16px;
-                padding: 12px 15px;
-            }
-            
-            .filter-group {
-                justify-content: space-between;
-            }
-            
-            .filter-group label {
-                min-width: 70px;
-                font-size: 0.9em;
-                font-weight: 600;
-            }
-            
-            .filter-group select, .filter-group input {
-                flex: 1;
-                min-width: 0;
-            }
-            
-            .stats {
-                justify-content: space-around;
-                gap: 15px;
-            }
-            
-            .stat-item {
-                font-size: 0.85em;
-            }
-            
-            .table-container {
-                max-height: 60vh;
-                font-size: 12px;
-            }
-            
-            table {
-                min-width: 700px;
-            }
-            
-            th, td {
-                padding: 6px 4px;
-                font-size: 11px;
-            }
-            
-            .pagination {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .page-info {
-                order: 1;
-            }
-            
-            .page-size-selector {
-                order: 3;
-                margin-left: 0;
-            }
-            
-            .pagination > div:not(.page-info):not(.page-size-selector) {
-                order: 2;
-            }
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🍽️ Restaurant Data Table</h1>
-            <p>Server-side filtering and pagination</p>
+            <h1>Restaurant Data Backend Filtering - SOAL LATIHAN</h1>
+            <p>Lengkapi kode berikut untuk membuat aplikasi backend filtering dan pagination restaurant</p>
+        </div>
+        
+        <div class="exercise-info">
+            <h3>📝 TUGAS MAHASISWA:</h3>
+            <p>Lengkapi bagian kode yang kosong (ditandai dengan TODO) untuk membuat aplikasi restaurant data table yang berfungsi penuh dengan backend filtering dan pagination.</p>
+            
+            <h4 style="margin-top: 15px; color: #cc0000;">⚙️ BACKEND PHP (resto-soal.php):</h4>
+            <div class="todo-item">TODO 1: Lengkapi MongoDB connection configuration dan error handling</div>
+            <div class="todo-item">TODO 2: Lengkapi function getFilterOptions() - ambil unique boroughs dan cuisines</div>
+            <div class="todo-item">TODO 3: Lengkapi function buildQuery() - buat MongoDB aggregation pipeline untuk filtering</div>
+            <div class="todo-item">TODO 4: Lengkapi search functionality dengan regex pattern matching</div>
+            <div class="todo-item">TODO 5: Lengkapi pagination logic dengan skip dan limit</div>
+            <div class="todo-item">TODO 6: Lengkapi HTTP request handling untuk action=restaurants dan action=filter-options</div>
+            
+            <h4 style="margin-top: 15px; color: #0066cc;">🌐 FRONTEND JavaScript:</h4>
+            <div class="todo-item">TODO 7: Lengkapi function loadData() untuk fetch data dengan query parameters</div>
+            <div class="todo-item">TODO 8: Lengkapi function displayResults() untuk render data ke table</div>
+            <div class="todo-item">TODO 9: Lengkapi function createTableRow() untuk create individual table rows</div>
+            <div class="todo-item">TODO 10: Lengkapi event listeners untuk search, filters, dan pagination dengan debouncing</div>
+            
+            <div class="code-hint">
+                HINT: Backend menggunakan MongoDB aggregation pipeline dengan $match, $sort, $skip, $limit<br>
+                HINT: Frontend menggunakan URLSearchParams untuk build query string<br>
+                HINT: Implementasikan debouncing untuk search input (500ms delay)<br>
+                HINT: Gunakan async/await pattern untuk API calls
+            </div>
         </div>
         
         <div class="controls">
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="🔍 Search restaurants, cuisine, or address...">
+            <div class="search-row">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Search restaurants, cuisine, or address...">
+                </div>
             </div>
             
-            <div class="filter-group">
-                <label>Borough:</label>
-                <select id="boroughFilter">
-                    <option value="">All Boroughs</option>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label>Cuisine:</label>
-                <select id="cuisineFilter">
-                    <option value="">All Cuisines</option>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label>Max Score:</label>
-                <input type="number" id="scoreFilter" placeholder="e.g. 30" min="0" max="100" style="width: 80px;">
-                <small style="color: #6c757d; font-size: 0.8em;">Latest grade</small>
+            <div class="filter-controls-row">
+                <div class="filter-group">
+                    <label>Borough:</label>
+                    <select id="boroughFilter">
+                        <option value="">All Boroughs</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Cuisine:</label>
+                    <select id="cuisineFilter">
+                        <option value="">All Cuisines</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Max Score:</label>
+                    <input type="number" id="scoreFilter" placeholder="e.g. 30" min="0" max="100">
+                    <small>Latest grade</small>
+                </div>
             </div>
         </div>
         
@@ -504,7 +517,7 @@
 
     <script>
         // Configuration
-        const API_BASE = 'resto.php';
+        const API_BASE = 'resto-soal.php';
         
         // Global variables
         let currentPage = 1;
@@ -525,119 +538,38 @@
             loadData();
         });
         
-        // Setup event listeners
+        // TODO 7: LENGKAPI FUNCTION INI
+        // Tugas: Setup semua event listeners untuk search, filters, pagination, dan sorting
         function setupEventListeners() {
-            // Search input with debounce
-            document.getElementById('searchInput').addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    currentPage = 1;
-                    loadData();
-                }, 500); // 500ms debounce
-            });
+            // HINT: Search input dengan debounce 500ms
+            // HINT: Filter changes reset currentPage ke 1
+            // HINT: Page size change reset currentPage ke 1
+            // HINT: Pagination buttons update currentPage
+            // HINT: Table sorting update sortColumn dan sortDirection
             
-            // Filter changes
-            document.getElementById('boroughFilter').addEventListener('change', function() {
-                currentPage = 1;
-                loadData();
-            });
+            // KODE ANDA DI SINI:
             
-            document.getElementById('cuisineFilter').addEventListener('change', function() {
-                currentPage = 1;
-                loadData();
-            });
             
-            document.getElementById('scoreFilter').addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    currentPage = 1;
-                    loadData();
-                }, 500);
-            });
-            
-            // Page size change
-            document.getElementById('pageSize').addEventListener('change', function() {
-                pageSize = parseInt(this.value);
-                currentPage = 1;
-                loadData();
-            });
-            
-            // Pagination buttons
-            document.getElementById('firstPage').addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage = 1;
-                    loadData();
-                }
-            });
-            
-            document.getElementById('prevPage').addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    loadData();
-                }
-            });
-            
-            document.getElementById('nextPage').addEventListener('click', () => {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    loadData();
-                }
-            });
-            
-            document.getElementById('lastPage').addEventListener('click', () => {
-                if (currentPage < totalPages) {
-                    currentPage = totalPages;
-                    loadData();
-                }
-            });
-            
-            // Table sorting
-            document.querySelectorAll('th.sortable').forEach(th => {
-                th.addEventListener('click', () => {
-                    const column = th.dataset.column;
-                    if (sortColumn === column) {
-                        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-                    } else {
-                        sortColumn = column;
-                        sortDirection = 'asc';
-                    }
-                    updateSortHeaders();
-                    loadData();
-                });
-            });
         }
         
-        // Load filter options
+        // TODO 8: LENGKAPI FUNCTION INI
+        // Tugas: Load filter options dari server untuk dropdown borough dan cuisine
         async function loadFilterOptions() {
             try {
-                const response = await fetch(`${API_BASE}?action=filter-options`);
-                const data = await response.json();
+                // HINT: Fetch dari API_BASE dengan parameter action=filter-options
+                // HINT: Parse response sebagai JSON
+                // HINT: Populate borough dan cuisine select elements
                 
-                if (data.success) {
-                    // Populate borough filter
-                    const boroughSelect = document.getElementById('boroughFilter');
-                    data.data.boroughs.forEach(borough => {
-                        const option = document.createElement('option');
-                        option.value = borough;
-                        option.textContent = borough;
-                        boroughSelect.appendChild(option);
-                    });
-                    
-                    // Populate cuisine filter
-                    const cuisineSelect = document.getElementById('cuisineFilter');
-                    data.data.cuisines.forEach(cuisine => {
-                        const option = document.createElement('option');
-                        option.value = cuisine;
-                        option.textContent = cuisine;
-                        cuisineSelect.appendChild(option);
-                    });
-                }
+                // KODE ANDA DI SINI:
+                
+                
             } catch (error) {
                 console.error('Error loading filter options:', error);
             }
         }
         
-        // Load restaurant data
+        // TODO 9: LENGKAPI FUNCTION INI  
+        // Tugas: Load restaurant data dari server dengan filtering dan pagination
         async function loadData() {
             if (isLoading) return;
             
@@ -645,36 +577,14 @@
             showLoading(true);
             
             try {
-                // Build query parameters
-                const params = new URLSearchParams({
-                    action: 'restaurants',
-                    page: currentPage,
-                    limit: pageSize,
-                    sort_by: sortColumn,
-                    sort_dir: sortDirection
-                });
+                // HINT: Build URLSearchParams dengan action=restaurants
+                // HINT: Tambahkan page, limit, sort_by, sort_dir
+                // HINT: Tambahkan filter parameters jika ada value
+                // HINT: Gunakan fetch() untuk request ke server
+                // HINT: Parse response dan panggil displayResults()
                 
-                // Add filters if they have values
-                const search = document.getElementById('searchInput').value.trim();
-                if (search) params.append('search', search);
+                // KODE ANDA DI SINI:
                 
-                const borough = document.getElementById('boroughFilter').value;
-                if (borough) params.append('borough', borough);
-                
-                const cuisine = document.getElementById('cuisineFilter').value;
-                if (cuisine) params.append('cuisine', cuisine);
-                
-                const maxScore = document.getElementById('scoreFilter').value.trim();
-                if (maxScore) params.append('max_score', maxScore);
-                
-                const response = await fetch(`${API_BASE}?${params}`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    displayResults(data.data, data.meta);
-                } else {
-                    showError(data.error || 'Failed to load data');
-                }
                 
             } catch (error) {
                 console.error('Error loading data:', error);
@@ -685,157 +595,56 @@
             }
         }
         
-        // Display results in table
+        // TODO 10: LENGKAPI FUNCTION INI
+        // Tugas: Display results dalam table dan update pagination info
         function displayResults(restaurants, meta) {
             const tbody = document.getElementById('restaurantTableBody');
             tbody.innerHTML = '';
             
             if (restaurants.length === 0) {
-                const row = document.createElement('tr');
-                const cell = document.createElement('td');
-                cell.colSpan = 6;
-                cell.style.textAlign = 'center';
-                cell.style.padding = '40px';
-                cell.style.color = '#6c757d';
-                cell.innerHTML = '🔍 No restaurants found with current filters';
-                row.appendChild(cell);
-                tbody.appendChild(row);
+                // HINT: Tampilkan message "No restaurants found" 
+                // KODE ANDA DI SINI:
+                
             } else {
-                restaurants.forEach(restaurant => {
-                    const row = createTableRow(restaurant);
-                    tbody.appendChild(row);
-                });
+                // HINT: Loop through restaurants dan panggil createTableRow()
+                // KODE ANDA DI SINI:
+                
             }
             
-            // Update pagination info
-            totalCount = meta.total_count;
-            currentPage = meta.current_page;
-            totalPages = meta.total_pages;
+            // HINT: Update global variables dari meta
+            // HINT: Panggil updateStats() dan updatePagination()
+            // HINT: Show table dan hide loading
             
-            updateStats(meta);
-            updatePagination();
+            // KODE ANDA DI SINI:
             
-            // Show table
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('restaurantTable').style.display = 'table';
-            document.getElementById('pagination').style.display = 'flex';
         }
         
-        // Create table row
+        // TODO 11: LENGKAPI FUNCTION INI
+        // Tugas: Create individual table row untuk setiap restaurant
         function createTableRow(restaurant) {
             const tr = document.createElement('tr');
             
             // Restaurant name
-            const nameCell = document.createElement('td');
-            nameCell.className = 'restaurant-name';
-            nameCell.textContent = restaurant.name || 'N/A';
-            tr.appendChild(nameCell);
+            // HINT: Buat cell dengan className 'restaurant-name'
             
-            // Borough
-            const boroughCell = document.createElement('td');
-            if (restaurant.borough) {
-                const boroughSpan = document.createElement('span');
-                boroughSpan.className = `borough ${restaurant.borough.toLowerCase().replace(/\s+/g, '-')}`;
-                boroughSpan.textContent = restaurant.borough;
-                boroughCell.appendChild(boroughSpan);
-            } else {
-                boroughCell.textContent = 'N/A';
-            }
-            tr.appendChild(boroughCell);
+            // Borough  
+            // HINT: Buat span dengan className 'borough' + borough name lowercase
             
             // Cuisine
-            const cuisineCell = document.createElement('td');
-            cuisineCell.className = 'cuisine';
-            cuisineCell.textContent = restaurant.cuisine || 'N/A';
-            tr.appendChild(cuisineCell);
+            // HINT: Buat cell dengan className 'cuisine'
             
             // Address
-            const addressCell = document.createElement('td');
-            addressCell.className = 'address';
-            if (restaurant.address) {
-                const addressParts = [];
-                if (restaurant.address.building) addressParts.push(restaurant.address.building);
-                if (restaurant.address.street) addressParts.push(restaurant.address.street);
-                if (restaurant.address.zipcode) addressParts.push(restaurant.address.zipcode);
-                addressCell.textContent = addressParts.join(', ') || 'N/A';
-            } else {
-                addressCell.textContent = 'N/A';
-            }
-            tr.appendChild(addressCell);
+            // HINT: Combine building, street, zipcode dari restaurant.address
             
             // Restaurant ID
-            const idCell = document.createElement('td');
-            idCell.textContent = restaurant.restaurant_id || 'N/A';
-            tr.appendChild(idCell);
+            // HINT: Tampilkan restaurant.restaurant_id
             
             // Grades
-            const gradesCell = document.createElement('td');
-            if (restaurant.grades && restaurant.grades.length > 0) {
-                const gradesDiv = document.createElement('div');
-                gradesDiv.className = 'grades';
-                
-                // Sort grades by date (newest first)
-                const sortedGrades = [...restaurant.grades].sort((a, b) => {
-                    if (a.date && b.date) {
-                        return new Date(b.date) - new Date(a.date);
-                    }
-                    return 0;
-                });
-                
-                // Show latest 3 grades
-                sortedGrades.slice(0, 3).forEach((grade, index) => {
-                    if (grade.grade) {
-                        const gradeBadge = document.createElement('span');
-                        const gradeClass = grade.grade.toLowerCase();
-                        gradeBadge.className = `grade-badge grade-${gradeClass}`;
-                        
-                        let badgeText = grade.grade;
-                        if (grade.score !== undefined && grade.score !== null) {
-                            badgeText += `/${grade.score}`;
-                        }
-                        gradeBadge.textContent = badgeText;
-                        
-                        // Tooltip
-                        const tooltipParts = [];
-                        if (index === 0) tooltipParts.push('Latest');
-                        tooltipParts.push(`Grade: ${grade.grade}`);
-                        if (grade.score !== undefined && grade.score !== null) {
-                            tooltipParts.push(`Score: ${grade.score}`);
-                        }
-                        if (grade.date) {
-                            const date = new Date(grade.date);
-                            if (!isNaN(date.getTime())) {
-                                tooltipParts.push(`Date: ${date.toLocaleDateString()}`);
-                            }
-                        }
-                        gradeBadge.title = tooltipParts.join(' | ');
-                        
-                        // Highlight latest grade
-                        if (index === 0) {
-                            gradeBadge.style.border = '2px solid #ffd700';
-                            gradeBadge.style.fontWeight = 'bold';
-                        }
-                        
-                        gradesDiv.appendChild(gradeBadge);
-                    }
-                });
-                
-                // Show count if more grades exist
-                if (restaurant.grades.length > 3) {
-                    const moreIndicator = document.createElement('span');
-                    moreIndicator.className = 'grade-badge';
-                    moreIndicator.style.background = '#6c757d';
-                    moreIndicator.style.fontSize = '0.7em';
-                    moreIndicator.textContent = `+${restaurant.grades.length - 3}`;
-                    moreIndicator.title = `${restaurant.grades.length} total grades`;
-                    gradesDiv.appendChild(moreIndicator);
-                }
-                
-                gradesCell.appendChild(gradesDiv);
-            } else {
-                gradesCell.textContent = 'No grades';
-            }
-            tr.appendChild(gradesCell);
+            // HINT: Loop through restaurant.grades, sort by date, tampilkan 3 terbaru
+            // HINT: Buat grade badges dengan className berdasarkan grade
+            
+            // KODE ANDA DI SINI:
+            
             
             return tr;
         }
