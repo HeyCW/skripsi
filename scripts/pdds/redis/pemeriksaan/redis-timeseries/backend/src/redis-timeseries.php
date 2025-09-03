@@ -76,10 +76,10 @@ function uploadCsv($file) {
         // Beri waktu untuk compaction berjalan
         sleep(2);
         
-        return ['success' => true, 'message' => 'CSV uploaded successfully'];
+        return true; // Return success
         
     } else {
-        return ['error' => 'File not found'];
+        throw new Exception('Could not open CSV file');
     }
 }
 
