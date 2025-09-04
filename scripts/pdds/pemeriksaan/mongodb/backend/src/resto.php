@@ -1,4 +1,8 @@
 <?php
+
+// Load Composer autoloader
+require_once 'vendor/autoload.php';
+
 // Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -29,11 +33,10 @@ function sendResponse($success, $data = null, $error = null, $meta = null) {
 }
 
 try {
-    // Load Composer autoloader
-    require_once 'vendor/autoload.php';
+    
     
     // Connect to MongoDB
-    $client = new MongoDB\Client('mongodb://host.docker.internal:27017');
+    $client = new MongoDB\Client('mongodb://host.docker.internal:27018');
     $resto = $client->selectDatabase('restaurant_db')->selectCollection('restaurants');
     
     // Get the requested action
