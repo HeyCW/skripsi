@@ -1,0 +1,65 @@
+# Folder Virtual Environment
+venv/
+.venv/
+
+# File cache dan kompilasi Python
+__pycache__/
+*.py[cod]
+
+# Folder metadata dari pip install
+*.dist-info/
+
+# Folder library hasil dari 'pip install -t .'
+# Ini akan mengabaikan semua folder library utama.
+google/
+googleapiclient/
+google_auth_httplib2/
+google_auth_oauthlib/
+oauthlib/
+httplib2/
+urllib3/
+requests/
+idna/
+charset_normalizer/
+certifi/
+pyasn1/
+pyasn1_modules/
+rsa/
+cachetools/
+apiclient/
+bin/
+cachetools/
+certifi/
+charset_normalizer/
+google_api_core/
+google_api_python_client/
+google_auth/
+googleapis_common_protos/
+idna/
+oauthlib/
+proto/
+protobuf/
+pyasn1/
+pyasn1_modules/
+pyparsing/
+requests*/
+rsa/
+six.py
+urllib3/
+s3transfer/
+uritemplate/
+jmespath/
+dateutil/
+botocore/
+boto3/
+
+# File-file IDE dan editor
+.vscode/
+.idea/
+
+# File-file sistem operasi
+.DS_Store
+Thumbs.db
+
+# Paket deployment
+*.zip

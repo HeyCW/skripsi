@@ -91,7 +91,45 @@ resource "aws_s3_object" "setup" {
   content_type = "application/x-httpd-php"
 }
 
-
+module "secret-manager" {
+  source = "./modules/secret-manager"
+  
+  project_name = var.project_name
+  environment  = var.environment
+  
+  secrets = {
+    google-creds = {
+      description = "Google Service Account credentials untuk akses Google Sheets dan Drive"
+      secret_value = {
+        credentials = "PASTE_YOUR_COMPLETE_GOOGLE_CREDENTIALS_JSON_HERE"
+      }
+    }
+    
+    google-sheet-id = {
+      description = "ID Google Sheet untuk menyimpan data"
+      secret_value = {
+        sheet_id = "YOUR_GOOGLE_SHEET_ID_HERE"
+      }
+    }
+    
+    google-drive-folder-id = {
+      description = "ID folder Google Drive untuk upload file log"
+      secret_value = {
+        folder_id = "YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE"
+      }
+    }
+    
+    email-config = {
+      description = "Konfigurasi email untuk Amazon SES"
+      secret_value = {
+        sender_email    = "YOUR_SENDER_EMAIL@example.com"
+        recipient_email = "YOUR_RECIPIENT_EMAIL@example.com"
+      }
+    }
+  }
+  
+  recovery_window_in_days = 7
+}
 
 # locals {
 #   # Debug user data script content
