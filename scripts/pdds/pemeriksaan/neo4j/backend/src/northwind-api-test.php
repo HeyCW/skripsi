@@ -144,99 +144,566 @@ class Neo4jApiTester {
         }
         
         $companies = $companiesResponse['data'];
-        $testCompany = $companies[0]['name']; // Use first company for testing
         
-        // Test competitor analysis
-        $response = $this->makeRequest('POST', '', ['company' => $testCompany]);
+        // Test with first few companies
+        $testLimit = count($companies); 
         
-        if ($response && $response['success']) {
-            $competitors = $response['data'] ?? [];
-            $resultCount = $response['result_count'] ?? 0;
+        for ($i = 0; $i < $testLimit; $i++) {
+            $testCompany = $companies[$i]['name'];
             
-            $this->addResult('Competitor Analysis Query', true, "Found {$resultCount} competitors for '{$testCompany}'");
+            echo "  Testing with company [" . ($i+1) . "/{$testLimit}]: {$testCompany}\n";
             
-            if ($resultCount > 0) {
-                // Check data structure
-                $firstCompetitor = $competitors[0];
-                $requiredFields = ['Competitor', 'NoProducts'];
-                $missingFields = [];
+            // Test competitor analysis
+            $response = $this->makeRequest('POST', '', ['company' => $testCompany]);
+            
+            if ($response && $response['success']) {
+                $competitors = $response['data'] ?? [];
+                $resultCount = $response['result_count'] ?? 0;
                 
-                foreach ($requiredFields as $field) {
-                    if (!isset($firstCompetitor[$field])) {
-                        $missingFields[] = $field;
-                    }
-                }
+                $this->addResult("Competitor Analysis Query ({$testCompany})", true, "Found {$resultCount} competitors for '{$testCompany}'");
                 
-                if (empty($missingFields)) {
-                    $this->addResult('Competitor Data Structure', true, 'All required fields present');
+                if ($resultCount > 0) {
+                    // Check data structure
+                    $firstCompetitor = $competitors[0];
+                    $requiredFields = ['Competitor', 'NoProducts'];
+                    $missingFields = [];
                     
-                    // Check if results are properly sorted
-                    $isSorted = true;
-                    for ($i = 0; $i < count($competitors) - 1; $i++) {
-                        $current = $competitors[$i]['NoProducts'];
-                        $next = $competitors[$i + 1]['NoProducts'];
-                        if ($current < $next) {
-                            $isSorted = false;
-                            break;
+                    foreach ($requiredFields as $field) {
+                        if (!isset($firstCompetitor[$field])) {
+                            $missingFields[] = $field;
                         }
                     }
                     
-                    if ($isSorted) {
-                        $this->addResult('Results Sorting', true, 'Results properly sorted by NoProducts DESC');
+                    if (empty($missingFields)) {
+                        $this->addResult("Competitor Data Structure ({$testCompany})", true, 'All required fields present');
+                        
+                        // Check if results are properly sorted by NoProducts DESC
+                        $isSorted = true;
+                        for ($j = 0; $j < count($competitors) - 1; $j++) {
+                            $current = $competitors[$j]['NoProducts'];
+                            $next = $competitors[$j + 1]['NoProducts'];
+                            if ($current < $next) {
+                                $isSorted = false;
+                                break;
+                            }
+                        }
+                        
+                        if ($isSorted) {
+                            $this->addResult("Results Sorting ({$testCompany})", true, 'Results properly sorted by NoProducts DESC');
+                        } else {
+                            $this->addResult("Results Sorting ({$testCompany})", false, 'Results not properly sorted');
+                        }
+                        
+                        // Display sample results (first 3)
+                        $sampleResults = array_slice($competitors, 0, 3);
+                        $samples = [];
+                        foreach ($sampleResults as $comp) {
+                            $samples[] = "{$comp['Competitor']} ({$comp['NoProducts']} products)";
+                        }
+                        $this->addResult("Sample Competitors ({$testCompany})", true, implode(', ', $samples));
+                        
+                        // Validate expected results for known companies
+                        $this->validateExpectedResults($testCompany, $competitors);
+                        
                     } else {
-                        $this->addResult('Results Sorting', false, 'Results not properly sorted');
+                        $this->addResult("Competitor Data Structure ({$testCompany})", false, 'Missing fields: ' . implode(', ', $missingFields));
                     }
-                    
-                    // Display sample results
-                    $sampleResults = array_slice($competitors, 0, 3);
-                    $samples = [];
-                    foreach ($sampleResults as $comp) {
-                        $samples[] = "{$comp['Competitor']} ({$comp['NoProducts']} products)";
-                    }
-                    $this->addResult('Sample Competitors', true, implode(', ', $samples));
                     
                 } else {
-                    $this->addResult('Competitor Data Structure', false, 'Missing fields: ' . implode(', ', $missingFields));
+                    $this->addResult("Competitor Results ({$testCompany})", true, "No competitors found for '{$testCompany}' (may be expected)");
                 }
                 
-                // Test with multiple companies
-                if (count($companies) > 1) {
-                    $testCompany2 = $companies[1]['name'];
-                    $response2 = $this->makeRequest('POST', '', ['company' => $testCompany2]);
-                    
-                    if ($response2 && $response2['success']) {
-                        $competitors2 = $response2['data'] ?? [];
-                        $this->addResult('Multiple Company Test', true, "'{$testCompany2}' analysis also successful");
-                        
-                        // Check if results are different (they should be for different companies)
-                        $results1 = array_column($competitors, 'Competitor');
-                        $results2 = array_column($competitors2, 'Competitor');
-                        
-                        if ($results1 !== $results2) {
-                            $this->addResult('Result Differentiation', true, 'Different companies return different competitors');
-                        } else {
-                            $this->addResult('Result Differentiation', false, 'Same competitors for different companies (suspicious)');
-                        }
-                    }
+                // Check if query and parameters are logged
+                if (isset($response['query']) && isset($response['parameters'])) {
+                    $this->addResult("Query Logging ({$testCompany})", true, 'Query and parameters properly logged');
+                } else {
+                    $this->addResult("Query Logging ({$testCompany})", false, 'Missing query logging information');
                 }
                 
             } else {
-                $this->addResult('Competitor Results', true, "No competitors found for '{$testCompany}' (may be expected)");
+                $error = $response['message'] ?? 'Unknown error';
+                $this->addResult("Competitor Analysis Query ({$testCompany})", false, "Analysis failed: {$error}");
             }
-            
-            // Check if query and parameters are logged
-            if (isset($response['query']) && isset($response['parameters'])) {
-                $this->addResult('Query Logging', true, 'Query and parameters properly logged');
-            } else {
-                $this->addResult('Query Logging', false, 'Missing query logging information');
-            }
-            
-        } else {
-            $error = $response['message'] ?? 'Unknown error';
-            $this->addResult('Competitor Analysis Query', false, "Analysis failed: {$error}");
+        }
+        
+        // Test result differentiation across multiple companies
+        if ($testLimit > 1) {
+            $this->testResultDifferentiation($companies, $testLimit);
         }
     }
-    
+
+    private function testResultDifferentiation($companies, $testLimit) {
+        echo "  Testing result differentiation across companies...\n";
+        
+        $allResults = [];
+        
+        // Get results for each test company
+        for ($i = 0; $i < $testLimit; $i++) {
+            $testCompany = $companies[$i]['name'];
+            $response = $this->makeRequest('POST', '', ['company' => $testCompany]);
+            
+            if ($response && $response['success']) {
+                $competitors = $response['data'] ?? [];
+                $allResults[$testCompany] = array_column($competitors, 'Competitor');
+            }
+        }
+        
+        // Check if results are different between companies
+        if (count($allResults) > 1) {
+            $companyNames = array_keys($allResults);
+            $allSame = true;
+            
+            for ($i = 1; $i < count($companyNames); $i++) {
+                $company1 = $companyNames[0];
+                $company2 = $companyNames[$i];
+                
+                if ($allResults[$company1] !== $allResults[$company2]) {
+                    $allSame = false;
+                    break;
+                }
+            }
+            
+            if (!$allSame) {
+                $this->addResult('Result Differentiation', true, 'Different companies return different competitors as expected');
+            } else {
+                $this->addResult('Result Differentiation', false, 'All companies return identical competitors (suspicious)');
+            }
+            
+            // Summary
+            $summary = [];
+            foreach ($allResults as $company => $competitors) {
+                $summary[] = "{$company} (" . count($competitors) . " competitors)";
+            }
+            $this->addResult('Multiple Company Test', true, 'Tested: ' . implode(', ', $summary));
+        }
+    }
+
+    private function validateExpectedResults($companyName, $actualCompetitors) {
+        // Expected results based on real CSV analysis
+        $expectedData = $this->getExpectedCompetitorData();
+        
+        // Find the expected data for this company
+        $expected = null;
+        foreach ($expectedData as $companyData) {
+            if ($companyData['name'] === $companyName) {
+                $expected = $companyData['competitors'];
+                break;
+            }
+        }
+        
+        if ($expected === null) {
+            $this->addResult("Expected Results Validation ({$companyName})", true, "No expected data for validation (company not in test dataset)");
+            return;
+        }
+        
+        // Check if competitor count matches
+        if (count($actualCompetitors) === count($expected)) {
+            $this->addResult("Competitor Count Validation ({$companyName})", true, "Expected " . count($expected) . " competitors, got " . count($actualCompetitors));
+        } else {
+            $this->addResult("Competitor Count Validation ({$companyName})", false, "Expected " . count($expected) . " competitors, got " . count($actualCompetitors));
+        }
+        
+        // Check if top competitors match (first 3)
+        $expectedTop3 = array_slice($expected, 0, 3);
+        $actualTop3 = array_slice($actualCompetitors, 0, 3);
+        
+        $topCompetitorsMatch = true;
+        for ($i = 0; $i < min(3, count($expectedTop3), count($actualTop3)); $i++) {
+            if ($expectedTop3[$i]['Competitor'] !== $actualTop3[$i]['Competitor'] || 
+                $expectedTop3[$i]['NoProducts'] !== $actualTop3[$i]['NoProducts']) {
+                $topCompetitorsMatch = false;
+                break;
+            }
+        }
+        
+        if ($topCompetitorsMatch) {
+            $this->addResult("Top Competitors Validation ({$companyName})", true, "Top 3 competitors match expected results");
+        } else {
+            $this->addResult("Top Competitors Validation ({$companyName})", false, "Top 3 competitors do not match expected results");
+        }
+    }
+
+    private function getExpectedCompetitorData() {
+        // Expected competitor data with proper sorting: NoProducts DESC, Competitor ASC
+        return [
+            [
+                'name' => 'Exotic Liquids',
+                'competitors' => [
+                    ['Competitor' => 'Leka Trading', 'NoProducts' => 2],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 2],
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 2],
+                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 1],
+                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 1],
+                    ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
+                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 1],
+                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
+                    ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
+                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 1],
+                    ['Competitor' => 'Refrescos Americanas LTDA', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'New Orleans Cajun Delights',
+                'competitors' => [
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 1],
+                    ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
+                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 1],
+                    ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
+                    ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Grandma Kelly\'s Homestead',
+                'competitors' => [
+                    ['Competitor' => 'Mayumi\'s', 'NoProducts' => 2],
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 2],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 1],
+                    ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
+                    ['Competitor' => 'G\'day', 'NoProducts' => 1],
+                    ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
+                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 1],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
+                    ['Competitor' => 'Tokyo Traders', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Tokyo Traders',
+                'competitors' => [
+                    ['Competitor' => 'G\'day', 'NoProducts' => 2],
+                    ['Competitor' => 'Mayumi\'s', 'NoProducts' => 2],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 2],
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 2],
+                    ['Competitor' => 'Escargots Nouveaux', 'NoProducts' => 1],
+                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 1],
+                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 1],
+                    ['Competitor' => 'Ma Maison', 'NoProducts' => 1],
+                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 1],
+                    ['Competitor' => 'Nord-Ost-Fisch Handelsgesellschaft mbH', 'NoProducts' => 1],
+                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Cooperativa de Quesos \'Las Cabras\'',
+                'competitors' => [
+                    ['Competitor' => 'Formaggi Fortini s.r.l.', 'NoProducts' => 1],
+                    ['Competitor' => 'Gai pâturage', 'NoProducts' => 1],
+                    ['Competitor' => 'Norske Meierier', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Mayumi\'s',
+                'competitors' => [
+                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 2],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 2],
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 2],
+                    ['Competitor' => 'Tokyo Traders', 'NoProducts' => 2],
+                    ['Competitor' => 'Escargots Nouveaux', 'NoProducts' => 1],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 1],
+                    ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
+                    ['Competitor' => 'G\'day', 'NoProducts' => 1],
+                    ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
+                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 1],
+                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 1],
+                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 1],
+                    ['Competitor' => 'Nord-Ost-Fisch Handelsgesellschaft mbH', 'NoProducts' => 1],
+                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Pavlova',
+                'competitors' => [
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 3],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 2],
+                    ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 2],
+                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 2],
+                    ['Competitor' => 'Leka Trading', 'NoProducts' => 2],
+                    ['Competitor' => 'Mayumi\'s', 'NoProducts' => 2],
+                    ['Competitor' => 'Tokyo Traders', 'NoProducts' => 2],
+                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 1],
+                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 1],
+                    ['Competitor' => 'Escargots Nouveaux', 'NoProducts' => 1],
+                    ['Competitor' => 'G\'day', 'NoProducts' => 1],
+                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 1],
+                    ['Competitor' => 'Heli Süßwaren GmbH & Co. KG', 'NoProducts' => 1],
+                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 1],
+                    ['Competitor' => 'Ma Maison', 'NoProducts' => 1],
+                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 1],
+                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 1],
+                    ['Competitor' => 'Nord-Ost-Fisch Handelsgesellschaft mbH', 'NoProducts' => 1],
+                    ['Competitor' => 'Refrescos Americanas LTDA', 'NoProducts' => 1],
+                    ['Competitor' => 'Specialty Biscuits', 'NoProducts' => 1],
+                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 1],
+                    ['Competitor' => 'Zaanse Snoepfabriek', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Specialty Biscuits',
+                'competitors' => [
+                    ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
+                    ['Competitor' => 'Heli Süßwaren GmbH & Co. KG', 'NoProducts' => 1],
+                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
+                    ['Competitor' => 'Zaanse Snoepfabriek', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'PB Knäckebröd AB',
+                'competitors' => [
+                    ['Competitor' => 'G\'day', 'NoProducts' => 1],
+                    ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
+                    ['Competitor' => 'Pasta Buttini s.r.l.', 'NoProducts' => 1],
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Refrescos Americanas LTDA',
+                'competitors' => [
+                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 1],
+                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 1],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 1],
+                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
+                    ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Heli Süßwaren GmbH & Co. KG',
+                'competitors' => [
+                    ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
+                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
+                    ['Competitor' => 'Specialty Biscuits', 'NoProducts' => 1],
+                    ['Competitor' => 'Zaanse Snoepfabriek', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Plutzer Lebensmittelgroßmärkte AG',
+                'competitors' => [
+                    ['Competitor' => 'G\'day', 'NoProducts' => 3],
+                    ['Competitor' => 'Leka Trading', 'NoProducts' => 3],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 3],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 2],
+                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 2],
+                    ['Competitor' => 'Mayumi\'s', 'NoProducts' => 2],
+                    ['Competitor' => 'Tokyo Traders', 'NoProducts' => 2],
+                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 1],
+                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 1],
+                    ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
+                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
+                    ['Competitor' => 'Ma Maison', 'NoProducts' => 1],
+                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 1],
+                    ['Competitor' => 'PB Knäckebröd AB', 'NoProducts' => 1],
+                    ['Competitor' => 'Pasta Buttini s.r.l.', 'NoProducts' => 1],
+                    ['Competitor' => 'Refrescos Americanas LTDA', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Nord-Ost-Fisch Handelsgesellschaft mbH',
+                'competitors' => [
+                    ['Competitor' => 'Escargots Nouveaux', 'NoProducts' => 1],
+                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 1],
+                    ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
+                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 1],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
+                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 1],
+                    ['Competitor' => 'Tokyo Traders', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Formaggi Fortini s.r.l.',
+                'competitors' => [
+                    ['Competitor' => 'Cooperativa de Quesos \'Las Cabras\'', 'NoProducts' => 1],
+                    ['Competitor' => 'Gai pâturage', 'NoProducts' => 1],
+                    ['Competitor' => 'Norske Meierier', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Norske Meierier',
+                'competitors' => [
+                    ['Competitor' => 'Cooperativa de Quesos \'Las Cabras\'', 'NoProducts' => 1],
+                    ['Competitor' => 'Formaggi Fortini s.r.l.', 'NoProducts' => 1],
+                    ['Competitor' => 'Gai pâturage', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Bigfoot Breweries',
+                'competitors' => [
+                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 1],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 1],
+                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
+                    ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 1],
+                    ['Competitor' => 'Refrescos Americanas LTDA', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Svensk Sjöföda AB',
+                'competitors' => [
+                    ['Competitor' => 'Escargots Nouveaux', 'NoProducts' => 1],
+                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 1],
+                    ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
+                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 1],
+                    ['Competitor' => 'Nord-Ost-Fisch Handelsgesellschaft mbH', 'NoProducts' => 1],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
+                    ['Competitor' => 'Tokyo Traders', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Aux joyeux ecclésiastiques',
+                'competitors' => [
+                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 1],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 1],
+                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
+                    ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 1],
+                    ['Competitor' => 'Refrescos Americanas LTDA', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'New England Seafood Cannery',
+                'competitors' => [
+                    ['Competitor' => 'Escargots Nouveaux', 'NoProducts' => 1],
+                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 1],
+                    ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
+                    ['Competitor' => 'Nord-Ost-Fisch Handelsgesellschaft mbH', 'NoProducts' => 1],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
+                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 1],
+                    ['Competitor' => 'Tokyo Traders', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Leka Trading',
+                'competitors' => [
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 3],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 2],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 2],
+                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 1],
+                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 1],
+                    ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
+                    ['Competitor' => 'G\'day', 'NoProducts' => 1],
+                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 1],
+                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
+                    ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
+                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 1],
+                    ['Competitor' => 'PB Knäckebröd AB', 'NoProducts' => 1],
+                    ['Competitor' => 'Pasta Buttini s.r.l.', 'NoProducts' => 1],
+                    ['Competitor' => 'Refrescos Americanas LTDA', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Lyngbysild',
+                'competitors' => [
+                    ['Competitor' => 'Escargots Nouveaux', 'NoProducts' => 1],
+                    ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
+                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 1],
+                    ['Competitor' => 'Nord-Ost-Fisch Handelsgesellschaft mbH', 'NoProducts' => 1],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
+                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 1],
+                    ['Competitor' => 'Tokyo Traders', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Zaanse Snoepfabriek',
+                'competitors' => [
+                    ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
+                    ['Competitor' => 'Heli Süßwaren GmbH & Co. KG', 'NoProducts' => 1],
+                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
+                    ['Competitor' => 'Specialty Biscuits', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Karkki Oy',
+                'competitors' => [
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 2],
+                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 1],
+                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 1],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 1],
+                    ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
+                    ['Competitor' => 'Heli Süßwaren GmbH & Co. KG', 'NoProducts' => 1],
+                    ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 1],
+                    ['Competitor' => 'Refrescos Americanas LTDA', 'NoProducts' => 1],
+                    ['Competitor' => 'Specialty Biscuits', 'NoProducts' => 1],
+                    ['Competitor' => 'Zaanse Snoepfabriek', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'G\'day',
+                'competitors' => [
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 3],
+                    ['Competitor' => 'Tokyo Traders', 'NoProducts' => 2],
+                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 1],
+                    ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
+                    ['Competitor' => 'Ma Maison', 'NoProducts' => 1],
+                    ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
+                    ['Competitor' => 'Pasta Buttini s.r.l.', 'NoProducts' => 1],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
+                    ['Competitor' => 'PB Knäckebröd AB', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Ma Maison',
+                'competitors' => [
+                    ['Competitor' => 'G\'day', 'NoProducts' => 1],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 1],
+                    ['Competitor' => 'Tokyo Traders', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Pasta Buttini s.r.l.',
+                'competitors' => [
+                    ['Competitor' => 'G\'day', 'NoProducts' => 1],
+                    ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
+                    ['Competitor' => 'PB Knäckebröd AB', 'NoProducts' => 1],
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Escargots Nouveaux',
+                'competitors' => [
+                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 1],
+                    ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
+                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 1],
+                    ['Competitor' => 'Nord-Ost-Fisch Handelsgesellschaft mbH', 'NoProducts' => 1],
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
+                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 1],
+                    ['Competitor' => 'Tokyo Traders', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Gai pâturage',
+                'competitors' => [
+                    ['Competitor' => 'Cooperativa de Quesos \'Las Cabras\'', 'NoProducts' => 1],
+                    ['Competitor' => 'Formaggi Fortini s.r.l.', 'NoProducts' => 1],
+                    ['Competitor' => 'Norske Meierier', 'NoProducts' => 1]
+                ]
+            ],
+            [
+                'name' => 'Forêts d\'érables',
+                'competitors' => [
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 2],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 1],
+                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 1],
+                    ['Competitor' => 'Heli Süßwaren GmbH & Co. KG', 'NoProducts' => 1],
+                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
+                    ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
+                    ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
+                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 1],
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 1],
+                    ['Competitor' => 'Specialty Biscuits', 'NoProducts' => 1],
+                    ['Competitor' => 'Zaanse Snoepfabriek', 'NoProducts' => 1]
+                ]
+            ]
+        ];
+    }
+        
     private function testCompetitorAnalysisInvalid() {
         echo "❌ Testing Competitor Analysis with Invalid Data...\n";
         

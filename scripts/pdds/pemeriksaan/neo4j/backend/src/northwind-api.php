@@ -198,7 +198,7 @@ try {
             MATCH (s1:Supplier)-[:SUPPLIES]->(p1:Product)-[:PART_OF]->(c:Category)<-[:PART_OF]-(p2:Product)<-[:SUPPLIES]-(s2:Supplier) 
             WHERE s1.companyName = \$company AND s1 <> s2 
             RETURN s2.companyName as Competitor, count(DISTINCT c) as NoProducts 
-            ORDER BY NoProducts DESC
+            ORDER BY NoProducts DESC, Competitor ASC
         ";
         
         $parameters = ['company' => $company];
@@ -222,7 +222,7 @@ try {
             case 'getCompanies':
                 $query = "MATCH (s:Supplier) RETURN s.companyName as companyName ORDER BY s.companyName";
                 $result = $neo4j->executeQuery($query);
-                
+            
                 $companies = [];
                 foreach ($result as $record) {
                     $companyName = $record->get('companyName');
@@ -232,19 +232,17 @@ try {
                         ];
                     }
                 }
-
                 $response = [
                     'success' => true,
                     'message' => 'Companies retrieved successfully',
                     'data' => $companies,
                     'count' => count($companies)
                 ];
-
                 // Ensure clean JSON output
                 header('Content-Type: application/json; charset=utf-8');
                 echo json_encode($response, JSON_UNESCAPED_UNICODE);
                 exit(); // Important: stop execution here
-
+                
             case 'getStats':
                 // Get database statistics
                 $statsQueries = [
@@ -254,7 +252,7 @@ try {
                     'supplies_relationships' => "MATCH ()-[r:SUPPLIES]->() RETURN count(r) as count",
                     'part_of_relationships' => "MATCH ()-[r:PART_OF]->() RETURN count(r) as count"
                 ];
-                
+            
                 $stats = [];
                 foreach ($statsQueries as $key => $query) {
                     try {
@@ -264,13 +262,28 @@ try {
                         $stats[$key] = 0;
                     }
                 }
-
-                echo json_encode(
-                    [
-                        'success' => true,
-                        'data' => $stats
-                    ]
-                );
+                
+                $response = [
+                    'success' => true,
+                    'message' => 'Statistics retrieved successfully',
+                    'data' => $stats
+                ];
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode($response, JSON_UNESCAPED_UNICODE);
+                exit();
+                
+            default:
+                // Handle invalid actions
+                $response = [
+                    'success' => false,
+                    'message' => "Invalid action: '{$action}'. Supported actions are: getCompanies, getStats",
+                    'data' => [],
+                    'error_code' => 'INVALID_ACTION'
+                ];
+                header('Content-Type: application/json; charset=utf-8');
+                http_response_code(400); // Bad Request
+                echo json_encode($response, JSON_UNESCAPED_UNICODE);
+                exit();
         }
     }
     
