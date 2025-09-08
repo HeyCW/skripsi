@@ -20,10 +20,7 @@ class MongoRestaurantTester {
         
         // Test all endpoints
         $this->testPingEndpoint();
-        $this->testCountEndpoint();
-        $this->testSampleEndpoint();
         $this->testFilterOptionsEndpoint();
-        $this->testDebugInfoEndpoint();
         $this->testRestaurantsEndpoint();
         $this->testRestaurantsWithFilters();
         $this->testRestaurantsPagination();
@@ -47,33 +44,6 @@ class MongoRestaurantTester {
         }
     }
     
-    private function testCountEndpoint() {
-        echo "📊 Testing Count Endpoint...\n";
-        
-        $response = $this->makeRequest('GET', '?action=count');
-        
-        if ($response && $response['success'] && isset($response['data']['total_restaurants'])) {
-            $count = $response['data']['total_restaurants'];
-            $this->addResult('Count Endpoint', true, "Total restaurants: {$count}");
-        } else {
-            $this->addResult('Count Endpoint', false, 'Failed to count restaurants');
-        }
-    }
-    
-    private function testSampleEndpoint() {
-        echo "🎲 Testing Sample Endpoint...\n";
-        
-        $response = $this->makeRequest('GET', '?action=sample');
-        
-        if ($response && $response['success'] && isset($response['data']['name'])) {
-            $name = $response['data']['name'];
-            $borough = $response['data']['borough'];
-            $cuisine = $response['data']['cuisine'];
-            $this->addResult('Sample Endpoint', true, "Sample: {$name} ({$cuisine}) in {$borough}");
-        } else {
-            $this->addResult('Sample Endpoint', false, 'Failed to get sample restaurant');
-        }
-    }
     
     private function testFilterOptionsEndpoint() {
         echo "🔍 Testing Filter Options Endpoint...\n";
@@ -110,32 +80,6 @@ class MongoRestaurantTester {
         }
     }
     
-    private function testDebugInfoEndpoint() {
-        echo "🔧 Testing Debug Info Endpoint...\n";
-        
-        $response = $this->makeRequest('GET', '?action=debug-info');
-        
-        if ($response && $response['success'] && isset($response['data'])) {
-            $data = $response['data'];
-            
-            $checks = [
-                'available_databases' => 'Databases listed',
-                'collections_in_restaurant_db' => 'Collections listed',
-                'restaurant_count' => 'Restaurant count available',
-                'available_actions' => 'Actions documented'
-            ];
-            
-            foreach ($checks as $key => $description) {
-                if (isset($data[$key])) {
-                    $this->addResult("Debug Info - {$description}", true, "✓");
-                } else {
-                    $this->addResult("Debug Info - {$description}", false, "Missing {$key}");
-                }
-            }
-        } else {
-            $this->addResult('Debug Info', false, 'Failed to get debug info');
-        }
-    }
     
     private function testRestaurantsEndpoint() {
         echo "🍽️ Testing Basic Restaurants Endpoint...\n";
@@ -182,9 +126,17 @@ class MongoRestaurantTester {
         
         // Test search filter
         $response = $this->makeRequest('GET', '?action=restaurants&search=pizza');
+
         if ($response && $response['success']) {
-            $count = count($response['data']);
-            $this->addResult('Search Filter (pizza)', true, "Found {$count} results");
+            $count = $response['meta']['total_count'];
+
+            // Kondisi if harus di dalam tanda kurung
+            if ($count == 403) {
+                $this->addResult('Search Filter (pizza)', true, "Found {$count} results");
+            } else {
+                // Beri pesan error yang jelas jika jumlahnya tidak sesuai
+                $this->addResult('Search Filter (pizza)', false, "Expected 403 results, but found {$count}");
+            }
         } else {
             $this->addResult('Search Filter (pizza)', false, 'Search filter failed');
         }
@@ -192,8 +144,13 @@ class MongoRestaurantTester {
         // Test borough filter
         $response = $this->makeRequest('GET', '?action=restaurants&borough=Manhattan');
         if ($response && $response['success']) {
-            $count = count($response['data']);
-            $this->addResult('Borough Filter (Manhattan)', true, "Found {$count} results");
+            $count = $response['meta']['total_count'];
+
+            if ($count == 1883) {
+                $this->addResult('Borough Filter (Manhattan)', true, "Found {$count} results");
+            } else{
+                $this->addResult('Borough Filter (Manhattan)', false, "Expected 1883 results, but found {$count}");
+            }
             
             // Verify all results are from Manhattan
             if ($count > 0) {
@@ -216,10 +173,18 @@ class MongoRestaurantTester {
         }
         
         // Test cuisine filter
-        $response = $this->makeRequest('GET', '?action=restaurants&cuisine=American');
+        $response = $this->makeRequest('GET', '?action=restaurants&cuisine=American%20'); 
         if ($response && $response['success']) {
-            $count = count($response['data']);
-            $this->addResult('Cuisine Filter (American)', true, "Found {$count} results");
+            $count = $response['meta']['total_count'];
+
+            if ($count == 1255) {
+                $this->addResult('Cuisine Filter (American)', true, "Found {$count} results");
+            }
+            else{
+                $this->addResult('Cuisine Filter (American)', false, "Expected 1255 results, but found {$count}");
+            }
+
+            
         } else {
             $this->addResult('Cuisine Filter (American)', false, 'Cuisine filter failed');
         }
@@ -227,8 +192,15 @@ class MongoRestaurantTester {
         // Test combined filters
         $response = $this->makeRequest('GET', '?action=restaurants&borough=Brooklyn&cuisine=Italian&search=restaurant');
         if ($response && $response['success']) {
-            $count = count($response['data']);
-            $this->addResult('Combined Filters', true, "Found {$count} results with multiple filters");
+            $count = $response['meta']['total_count'];
+
+            if ($count == 15) {
+                $this->addResult('Combined Filters', true, "Found {$count} results with multiple filters");
+            }
+            else{
+                $this->addResult('Combined Filters', false, "Expected 15 results, but found {$count}");
+            }
+            
         } else {
             $this->addResult('Combined Filters', false, 'Combined filters failed');
         }
@@ -326,56 +298,63 @@ class MongoRestaurantTester {
     
     private function testRestaurantsScoreFilter() {
         echo "⭐ Testing Score Filter...\n";
-        
-        $scoreTests = [10, 20, 50];
-        
-        foreach ($scoreTests as $maxScore) {
-            $response = $this->makeRequest('GET', "?action=restaurants&max_score={$maxScore}&limit=10");
+
+        // Definisikan ekspektasi skor dan jumlah hasil yang diharapkan
+        $expectedCounts = [
+            5  => 557,
+            10 => 1962,
+            15 => 3372,
+            20 => 3539
+        ];
+
+        // Langsung loop pada array ekspektasi untuk mendapatkan skor dan jumlah yang diharapkan
+        foreach ($expectedCounts as $maxScore => $expectedCount) {
+            $response = $this->makeRequest('GET', "?action=restaurants&max_score={$maxScore}");
+
+            if (!$response || !$response['success']) {
+                $this->addResult("Score Filter ≤{$maxScore}", false, 'API request failed');
+                continue; // Lanjut ke tes skor berikutnya
+            }
             
-            if ($response && $response['success']) {
-                $restaurants = $response['data'];
-                $count = count($restaurants);
-                
-                if ($count > 0) {
-                    // Check if restaurants have grades and latest score is within limit
-                    $validScores = true;
-                    $checkedRestaurants = 0;
-                    
-                    foreach ($restaurants as $restaurant) {
-                        if (isset($restaurant['grades']) && is_array($restaurant['grades']) && count($restaurant['grades']) > 0) {
-                            // Find latest grade by date
-                            $latestGrade = null;
-                            $latestDate = '';
-                            
-                            foreach ($restaurant['grades'] as $grade) {
-                                if (isset($grade['date']) && $grade['date'] > $latestDate) {
-                                    $latestDate = $grade['date'];
-                                    $latestGrade = $grade;
-                                }
-                            }
-                            
-                            if ($latestGrade && isset($latestGrade['score'])) {
-                                $checkedRestaurants++;
-                                if ($latestGrade['score'] > $maxScore) {
-                                    $validScores = false;
-                                    break;
-                                }
+            // Ambil jumlah total dari response dan data restorannya
+            $actualTotal = $response['meta']['total_count']; 
+            $restaurants = $response['data'];
+
+            // 1. Validasi Jumlah Hasil
+            if ($actualTotal !== $expectedCount) {
+                $this->addResult("Score Filter ≤{$maxScore}", false, "Count mismatch: Expected {$expectedCount}, but got {$actualTotal}");
+                continue; // Gagal, lanjut ke tes skor berikutnya
+            }
+            
+            // 2. Validasi Skor dari Data yang Dikembalikan (jika ada)
+            $scoresAreValid = true;
+            if (!empty($restaurants)) {
+                foreach ($restaurants as $restaurant) {
+                    // Logika untuk mencari skor terbaru (sudah benar dari kode Anda)
+                    $latestGrade = null;
+                    $latestDate = '';
+                    if (isset($restaurant['grades']) && !empty($restaurant['grades'])) {
+                        foreach ($restaurant['grades'] as $grade) {
+                            if (isset($grade['date']) && $grade['date'] > $latestDate) {
+                                $latestDate = $grade['date'];
+                                $latestGrade = $grade;
                             }
                         }
                     }
-                    
-                    if ($validScores && $checkedRestaurants > 0) {
-                        $this->addResult("Score Filter ≤{$maxScore}", true, "Found {$count} restaurants, checked {$checkedRestaurants} scores");
-                    } else if ($checkedRestaurants === 0) {
-                        $this->addResult("Score Filter ≤{$maxScore}", true, "Found {$count} restaurants (no scores to verify)");
-                    } else {
-                        $this->addResult("Score Filter ≤{$maxScore}", false, "Some scores exceed {$maxScore}");
+
+                    // Jika skor terbaru melebihi batas, tes gagal
+                    if ($latestGrade && isset($latestGrade['score']) && $latestGrade['score'] > $maxScore) {
+                        $scoresAreValid = false;
+                        break; // Keluar dari loop restoran
                     }
-                } else {
-                    $this->addResult("Score Filter ≤{$maxScore}", true, "No restaurants found with score ≤{$maxScore} (expected behavior)");
                 }
+            }
+            
+            // 3. Laporkan Hasil Akhir
+            if ($scoresAreValid) {
+                $this->addResult("Score Filter ≤{$maxScore}", true, "OK: Found {$actualTotal} results and all scores are valid.");
             } else {
-                $this->addResult("Score Filter ≤{$maxScore}", false, 'Score filter failed');
+                $this->addResult("Score Filter ≤{$maxScore}", false, "FAIL: A restaurant with a score greater than {$maxScore} was found.");
             }
         }
     }

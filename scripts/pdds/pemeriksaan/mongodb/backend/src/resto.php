@@ -36,7 +36,7 @@ try {
     
     
     // Connect to MongoDB
-    $client = new MongoDB\Client('mongodb://host.docker.internal:27018');
+    $client = new MongoDB\Client('mongodb://127.0.0.1:27018');
     $resto = $client->selectDatabase('restaurant_db')->selectCollection('restaurants');
     
     // Get the requested action
@@ -133,10 +133,6 @@ try {
                 if (!empty($cuisine)) {
                     $filter['cuisine'] = $cuisine;
                 }
-                
-                // Debug: log the filter being used
-                error_log("Filter being used: " . json_encode($filter));
-                error_log("Max Score: " . $maxScore);
                 
                 // Score filter - find restaurants where latest grade score <= maxScore
                 if (!empty($maxScore) && is_numeric($maxScore)) {
