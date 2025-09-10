@@ -17,3 +17,11 @@ output "redis_endpoint" {
 #   description = "The ID of the EC2 instance running the Cloud9 Environment"
 #   value       = module.cloud9.cloud9_ec2_id
 # }
+
+output "lambda_function_arn" {
+  value = module.lambda_processor.lambda_function_arn
+}
+
+output "lambda_function_name" {
+  value = module.lambda_processor.lambda_function_name
+}

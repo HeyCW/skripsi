@@ -3,6 +3,7 @@ import boto3
 import os
 from io import BytesIO
 from datetime import datetime
+import base64
 
 # Import library Google
 from google.oauth2.service_account import Credentials
@@ -11,49 +12,77 @@ from googleapiclient.http import MediaIoBaseUpload
 
 # Inisialisasi Klien AWS
 s3_client = boto3.client('s3')
-ses_client = boto3.client('ses', region_name=os.environ.get('AWS_REGION', 'ap-southeast-1'))
+ses_client = boto3.client('ses', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+sns_client = boto3.client('sns')
 secrets_manager_client = boto3.client('secretsmanager')
 
-# Nama secret yang disimpan di AWS Secrets Manager
-# Sesuaikan dengan nama secret dari Terraform module kita
-SECRET_NAME = os.environ.get('SECRET_NAME', 'my-project-dev-app-config')
-
-def get_secret():
+def get_secret(secret_name):
     """Mengambil secret dari AWS Secrets Manager."""
     try:
-        response = secrets_manager_client.get_secret_value(SecretId=SECRET_NAME)
+        response = secrets_manager_client.get_secret_value(SecretId=secret_name)
         secret = json.loads(response['SecretString'])
         return secret
     except Exception as e:
-        print(f"Error mengambil secret: {e}")
+        print(f"Error mengambil secret {secret_name}: {e}")
         raise e
 
-def get_google_services(secret):
-    """Menginisialisasi layanan Google Drive dan Sheets."""
+def get_all_secrets():
+    """Mengambil semua secrets yang diperlukan."""
     try:
-        # Ambil kredensial dari secret (sesuai struktur yang kita buat)
-        if 'google_creds' in secret:
-            # Jika menggunakan struktur terpisah
-            creds_json = secret['google_creds']
+        project_name = os.environ.get('PROJECT_NAME', 'skripsi')
+        environment = os.environ.get('ENVIRONMENT', 'dev')
+        
+        # Ambil Google Sheet ID
+        sheet_secret_name = f"{project_name}-{environment}-google-sheet-id"
+        sheet_secret = get_secret(sheet_secret_name)
+        
+        # Ambil Email Config  
+        email_secret_name = f"{project_name}-{environment}-email-config"
+        email_secret = get_secret(email_secret_name)
+        
+        # Gabungkan semua secrets
+        all_secrets = {
+            'google_sheet_id': sheet_secret.get('sheet_id'),
+            'sender_email': email_secret.get('sender_email'),
+            'recipient_email': email_secret.get('recipient_email')
+        }
+        
+        print(f"Secrets berhasil diambil: {list(all_secrets.keys())}")
+        return all_secrets
+        
+    except Exception as e:
+        print(f"Error mengambil secrets: {e}")
+        raise e
+
+def get_google_services():
+    """Menginisialisasi layanan Google Sheets."""
+    try:
+        project_name = os.environ.get('PROJECT_NAME', 'skripsi')
+        environment = os.environ.get('ENVIRONMENT', 'dev')
+        
+        # Ambil Google credentials dari secret manager
+        creds_secret_name = f"{project_name}-{environment}-google-creds"
+        creds_secret = get_secret(creds_secret_name)
+        
+        # Parse credentials JSON
+        if 'credentials' in creds_secret:
+            creds_json = creds_secret['credentials']
             if isinstance(creds_json, str):
                 creds_data = json.loads(creds_json)
             else:
                 creds_data = creds_json
         else:
-            # Fallback untuk struktur lama
-            creds_data = json.loads(secret['credentials'])
+            raise ValueError("Credentials not found in secret")
         
         creds = Credentials.from_service_account_info(
             creds_data,
             scopes=[
                 'https://www.googleapis.com/auth/spreadsheets',
-                'https://www.googleapis.com/auth/drive'
             ]
         )
         
         sheets_service = build('sheets', 'v4', credentials=creds)
-        drive_service = build('drive', 'v3', credentials=creds)
-        return sheets_service, drive_service
+        return sheets_service
         
     except Exception as e:
         print(f"Error menginisialisasi Google services: {e}")
@@ -69,10 +98,8 @@ def process_log_content(log_content, filename):
     
     # Inisialisasi data default
     data = {
-        "nim": "N/A",
-        "score": "N/A",
-        "status": "Tidak Diketahui",
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "nrp": "N/A",
+        "score": "N/A", 
         "filename": filename
     }
     
@@ -83,11 +110,11 @@ def process_log_content(log_content, filename):
         for line in lines:
             line = line.strip()
             
-            # Ekstrak NIM
-            if "NIM:" in line or "nim:" in line.lower():
+            # Ekstrak NRP/NIM
+            if "NRP:" in line or "nim:" in line.lower() or "NIM:" in line:
                 try:
-                    nim = line.split(":")[1].strip().split(",")[0].split()[0]
-                    data["nim"] = nim
+                    nrp = line.split(":")[1].strip().split(",")[0].split()[0]
+                    data["nrp"] = nrp
                 except:
                     pass
             
@@ -126,7 +153,7 @@ def update_google_sheet(service, sheet_id, data):
         values = [
             [
                 timestamp,
-                data.get('nim', 'N/A'),
+                data.get('nrp', 'N/A'),
                 data.get('score', 'N/A'),
                 data.get('status', 'N/A'),
                 data.get('filename', 'N/A')
@@ -154,62 +181,15 @@ def update_google_sheet(service, sheet_id, data):
         print(f"Error saat update Google Sheet: {e}")
         return False
 
-def upload_to_google_drive(service, folder_id, filename, file_content):
-    """Mengunggah file log ke folder Google Drive."""
-    try:
-        # Buat nama file yang unik dengan timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        unique_filename = f"{timestamp}_{filename}"
-        
-        file_metadata = {
-            'name': unique_filename,
-            'parents': [folder_id],
-            'description': f'Log file uploaded at {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
-        }
-        
-        # Upload file
-        media = MediaIoBaseUpload(
-            BytesIO(file_content.encode('utf-8')), 
-            mimetype='text/plain',
-            resumable=True
-        )
-        
-        file = service.files().create(
-            body=file_metadata,
-            media_body=media,
-            fields='id,name,webViewLink'
-        ).execute()
-        
-        print(f"File berhasil diunggah ke Google Drive:")
-        print(f"- File ID: {file.get('id')}")
-        print(f"- File Name: {file.get('name')}")
-        print(f"- Link: {file.get('webViewLink')}")
-        
-        return {
-            'success': True,
-            'file_id': file.get('id'),
-            'file_name': file.get('name'),
-            'link': file.get('webViewLink')
-        }
-        
-    except Exception as e:
-        print(f"Error saat upload ke Google Drive: {e}")
-        return {'success': False, 'error': str(e)}
-
-def send_email_notification(sender_email, recipient_email, data, log_filename, drive_result=None):
+def send_email_notification(sender_email, recipient_email, data, log_filename):
     """Mengirim notifikasi email menggunakan Amazon SES."""
     try:
-        nim = data.get('nim', 'N/A')
+        nrp = data.get('nrp', 'N/A')
         score = data.get('score', 'N/A')
         status = data.get('status', 'N/A')
         timestamp = data.get('timestamp', 'N/A')
         
-        subject = f"Hasil Penilaian Otomatis - NIM: {nim}"
-        
-        # Buat link Google Drive jika ada
-        drive_link = ""
-        if drive_result and drive_result.get('success') and drive_result.get('link'):
-            drive_link = f'<p><a href="{drive_result["link"]}" target="_blank">Lihat file di Google Drive</a></p>'
+        subject = f"Hasil Penilaian Otomatis - NRP: {nrp}"
         
         body_html = f"""
         <html>
@@ -241,8 +221,8 @@ def send_email_notification(sender_email, recipient_email, data, log_filename, d
                             <th>Nilai</th>
                         </tr>
                         <tr>
-                            <td>NIM</td>
-                            <td>{nim}</td>
+                            <td>NRP</td>
+                            <td>{nrp}</td>
                         </tr>
                         <tr>
                             <td>Skor</td>
@@ -250,16 +230,13 @@ def send_email_notification(sender_email, recipient_email, data, log_filename, d
                         </tr>
                         <tr>
                             <td>Status</td>
-                            <td class="{'status-lulus' if 'lulus' in status.lower() else 'status-tidak-lulus'}">{status}</td>
+                            <td class="{'status-lulus' if 'lulus' in str(status).lower() else 'status-tidak-lulus'}">{status}</td>
                         </tr>
                         <tr>
                             <td>Waktu Proses</td>
                             <td>{timestamp}</td>
                         </tr>
                     </table>
-                    
-                    {drive_link}
-                    
                     <p><em>Email ini dikirim secara otomatis oleh sistem penilaian.</em></p>
                 </div>
             </div>
@@ -283,6 +260,41 @@ def send_email_notification(sender_email, recipient_email, data, log_filename, d
         print(f"Error mengirim email: {e}")
         return False
 
+def send_notification_with_attachment_via_sns(topic_arn, data, zip_file_path):
+    """Send via SNS dengan size checking"""
+    
+    # Check file size
+    file_size = os.path.getsize(zip_file_path)
+    max_sns_size = 200 * 1024  # 200 KB (buffer untuk metadata)
+    
+    if file_size > max_sns_size:
+        raise ValueError(f"File too large ({file_size} bytes) for SNS. Maximum allowed: {max_sns_size} bytes")
+    
+    # Small file - send via SNS
+    with open(zip_file_path, 'rb') as f:
+        file_content_base64 = base64.b64encode(f.read()).decode('utf-8')
+    
+    message = {
+        'nrp': data.get('nrp'),
+        'score': data.get('score'), 
+        'status': data.get('status'),
+        'file_attachment': file_content_base64,
+        'file_name': os.path.basename(zip_file_path),
+        'file_size': file_size
+    }
+    
+    try:
+        sns_client.publish(
+            TopicArn=topic_arn,
+            Message=json.dumps(message),
+            Subject=f"Hasil Penilaian - {data.get('nrp')}"
+        )
+        print("File sent via SNS successfully")
+        return True
+    except Exception as e:
+        print(f"SNS failed: {e}")
+        return False
+
 def lambda_handler(event, context):
     """Fungsi utama yang dieksekusi oleh AWS Lambda."""
     
@@ -290,25 +302,20 @@ def lambda_handler(event, context):
     print(f"Event: {json.dumps(event, indent=2)}")
     
     try:
-        # 1. Validasi event
         if 'Records' not in event or len(event['Records']) == 0:
             raise ValueError("Event tidak mengandung Records S3")
         
-        # 2. Ambil informasi file dari event S3
         s3_record = event['Records'][0]['s3']
         s3_bucket = s3_record['bucket']['name']
         s3_key = s3_record['object']['key']
         
         print(f"Mendeteksi file baru: s3://{s3_bucket}/{s3_key}")
         
-        # 3. Ambil Kredensial & Konfigurasi
-        print("Mengambil secrets...")
-        secrets = get_secret()
+        print("Mengambil secrets dari Secret Manager...")
+        secrets = get_all_secrets()
         
-        print("Menginisialisasi Google services...")
-        sheets_service, drive_service = get_google_services(secrets)
+        sheets_service = get_google_services()
         
-        # 4. Baca konten file log dari S3
         print("Membaca file dari S3...")
         try:
             response = s3_client.get_object(Bucket=s3_bucket, Key=s3_key)
@@ -327,19 +334,17 @@ def lambda_handler(event, context):
         
         # 6. Ambil konfigurasi dari secrets
         sheet_id = secrets.get('google_sheet_id')
-        drive_folder_id = secrets.get('google_drive_folder_id') 
         sender_email = secrets.get('sender_email')
         recipient_email = secrets.get('recipient_email')
         
         # Validasi konfigurasi
         missing_configs = []
         if not sheet_id: missing_configs.append('google_sheet_id')
-        if not drive_folder_id: missing_configs.append('google_drive_folder_id')
         if not sender_email: missing_configs.append('sender_email')
         if not recipient_email: missing_configs.append('recipient_email')
         
         if missing_configs:
-            raise ValueError(f"Konfigurasi tidak lengkap: {', '.join(missing_configs)}")
+            raise ValueError(f"Konfigurasi tidak lengkap di Secret Manager: {', '.join(missing_configs)}")
         
         # 7. Jalankan semua aksi
         print("Menjalankan aksi...")
@@ -348,18 +353,13 @@ def lambda_handler(event, context):
         print("Updating Google Sheet...")
         sheet_result = update_google_sheet(sheets_service, sheet_id, processed_data)
         
-        # Upload ke Google Drive
-        print("Uploading to Google Drive...")
-        drive_result = upload_to_google_drive(drive_service, drive_folder_id, s3_key, log_content)
-        
-        # Kirim email notifikasi
+        # Send Email Notification
         print("Sending email notification...")
         email_result = send_email_notification(
             sender_email, 
             recipient_email, 
             processed_data, 
-            s3_key,
-            drive_result
+            os.path.basename(s3_key)
         )
         
         # 8. Kumpulkan hasil
@@ -367,7 +367,6 @@ def lambda_handler(event, context):
             'file_processed': s3_key,
             'data_extracted': processed_data,
             'sheet_updated': sheet_result,
-            'drive_uploaded': drive_result.get('success', False) if isinstance(drive_result, dict) else drive_result,
             'email_sent': email_result,
             'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }

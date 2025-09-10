@@ -80,55 +80,75 @@ module "ecs-fargate" {
   security_groups = [ module.network.web_sg_id ]
 }
 
-data "http" "setup" {
-  url = "https://raw.githubusercontent.com/HeyCW/skripsi/refs/heads/main/assignments/redis-lab/redis-timeseries/setup.sh"
-}
+# data "http" "setup" {
+#   url = "https://raw.githubusercontent.com/HeyCW/skripsi/refs/heads/main/assignments/redis-lab/redis-timeseries/setup.sh"
+# }
 
-resource "aws_s3_object" "setup" {
-  bucket       = module.bucket.bucket_id
-  key          = "redis-lab/redis-timeseries/setup.sh"
-  content      = data.http.setup.response_body
-  content_type = "application/x-httpd-php"
-}
+# resource "aws_s3_object" "setup" {
+#   bucket       = module.bucket.bucket_id
+#   key          = "redis-lab/redis-timeseries/setup.sh"
+#   content      = data.http.setup.response_body
+#   content_type = "application/x-httpd-php"
+# }
 
-module "secret-manager" {
-  source = "./modules/secret-manager"
+# module "secret-manager" {
+#   source = "./modules/secret-manager"
   
-  project_name = var.project_name
-  environment  = var.environment
+#   project_name = var.project_name
+#   environment  = var.environment
   
-  secrets = {
-    google-creds = {
-      description = "Google Service Account credentials untuk akses Google Sheets dan Drive"
-      secret_value = {
-        credentials = "PASTE_YOUR_COMPLETE_GOOGLE_CREDENTIALS_JSON_HERE"
-      }
-    }
+#   secrets = {
+#     google-sheet-id = {
+#       description = "ID Google Sheet untuk menyimpan data"
+#       secret_value = {
+#         sheet_id = "YOUR_GOOGLE_SHEET_ID_HERE"
+#       }
+#     }
     
-    google-sheet-id = {
-      description = "ID Google Sheet untuk menyimpan data"
-      secret_value = {
-        sheet_id = "YOUR_GOOGLE_SHEET_ID_HERE"
-      }
-    }
-    
-    google-drive-folder-id = {
-      description = "ID folder Google Drive untuk upload file log"
-      secret_value = {
-        folder_id = "YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE"
-      }
-    }
-    
-    email-config = {
-      description = "Konfigurasi email untuk Amazon SES"
-      secret_value = {
-        sender_email    = "YOUR_SENDER_EMAIL@example.com"
-        recipient_email = "YOUR_RECIPIENT_EMAIL@example.com"
-      }
-    }
+#     email-config = {
+#       description = "Konfigurasi email untuk Amazon SES"
+#       secret_value = {
+#         sender_email    = "YOUR_SENDER_EMAIL@example.com"
+#         recipient_email = "YOUR_RECIPIENT_EMAIL@example.com"
+#       }
+#     }
+#   }
+
+#   recovery_window_in_days = 0
+# }
+
+module "lambda_processor" {
+  source = "./modules/lambda"
+
+  # Required variables
+  project_name   = "log-processor"
+  environment    = "dev"
+  
+  # Lambda configuration
+  lambda_filename       = "lambda-code/lambda_function.zip"
+  lambda_layer_filename = "lambda-code/python.zip"
+  handler              = "lambda_function.lambda_handler"
+  runtime              = "python3.11"
+  timeout              = 300
+  memory_size          = 512
+  
+  # S3 configuration
+  s3_bucket_name = "my-project-logs-bucket"
+  s3_bucket_arn  = "arn:aws:s3:::my-project-logs-bucket"
+  s3_filter_prefix = "incoming-logs/"
+  s3_filter_suffix = ".json"
+  
+  # Secrets Manager configuration
+  secret_name = "google-api-credentials"
+  secret_arn  = "arn:aws:secretsmanager:us-east-1:123456789012:secret:google-api-credentials-AbCdEf"
+  
+  # Layer configuration
+  create_layer = true
+  # existing_layer_arn = "arn:aws:lambda:us-east-1:123456789012:layer:my-existing-layer:1"
+  
+  # Additional tags
+  additional_tags = {
   }
-  
-  recovery_window_in_days = 7
 }
 
 # locals {

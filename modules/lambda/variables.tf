@@ -12,7 +12,7 @@ variable "environment" {
 variable "lambda_function_name" {
   description = "Lambda function name"
   type        = string
-  default     = null
+  default     = "Penilaian"
 }
 
 variable "lambda_filename" {
@@ -24,7 +24,7 @@ variable "lambda_filename" {
 variable "lambda_layer_filename" {
   description = "Path to Lambda layer zip file"
   type        = string
-  default     = "google-api-layer.zip"
+  default     = "lambda-code/python.zip"
 }
 
 variable "handler" {
@@ -99,16 +99,4 @@ variable "additional_tags" {
   description = "Additional tags to apply to all resources"
   type        = map(string)
   default     = {}
-}
-
-variable "log_retention_days" {
-  description = "CloudWatch logs retention period in days"
-  type        = number
-  default     = 14
-}
-
-variable "reserved_concurrent_executions" {
-  description = "Reserved concurrent executions for Lambda function"
-  type        = number
-  default     = -1
 }
