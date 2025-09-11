@@ -14,18 +14,17 @@ variable "environment" {
     condition     = contains(["dev", "staging", "prod"], var.environment)
     error_message = "Environment must be one of: dev, staging, prod."
   }
+  default = "def"
 }
 
 variable "project_name" {
-  description = "Project name for resource naming"
+  description = "Enter your NRP:"
   type        = string
-  default     = "skripsi"
 }
 
 variable "additional_tags" {
   description = "Additional tags for all resources"
   type        = map(string)
-  default     = {}
 }
 
 # =============================================================================
@@ -34,6 +33,11 @@ variable "additional_tags" {
 variable "vpc_name" {
   description = "Name of the VPC"
   type        = string
+  default     = ""
+}
+
+locals {
+  vpc_name = var.vpc_name != "" ? var.vpc_name : "vpc-${var.project_name}"
 }
 
 variable "vpc_cidr" {

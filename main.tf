@@ -133,9 +133,9 @@ module "lambda_processor" {
   memory_size          = 512
   
   # S3 configuration
-  s3_bucket_name = "my-project-logs-bucket"
-  s3_bucket_arn  = "arn:aws:s3:::my-project-logs-bucket"
-  s3_filter_prefix = "incoming-logs/"
+  s3_bucket_name = module.bucket.bucket_name
+  s3_bucket_arn  = module.bucket.bucket_arn
+  s3_filter_prefix = "answer/"
   s3_filter_suffix = ".json"
   
   # Secrets Manager configuration

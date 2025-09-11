@@ -1,5 +1,7 @@
 resource "aws_s3_bucket" "bucket" {
-  bucket = "${var.project_name}-${var.environment}-emr-${random_string.bucket_suffix.result}"
+  bucket = "${var.project_name}-${var.environment}-${random_string.bucket_suffix.result}"
+
+  force_destroy = true 
 
   tags = merge({
     Name        = var.project_name

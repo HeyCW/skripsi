@@ -7,15 +7,17 @@
 class RedisListTester {
     private $baseUrl;
     private $results = [];
-    private $testNames = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve'];
+    private $testSession;
     
     public function __construct($baseUrl = 'http://localhost') {
         $this->baseUrl = rtrim($baseUrl, '/');
     }
     
-    public function runTests() {
+    public function runTests($outputJson = false, $s3Upload = false) {
         echo "🚀 Starting Redis List API Tests...\n\n";
         
+        $startTime = microtime(true);
+
         // Clear any existing data first
         $this->clearList();
         
@@ -29,8 +31,144 @@ class RedisListTester {
         $this->testMixedOperations();
         $this->testErrorHandling();
         
+        
+       $endTime = microtime(true);
+
+        $this->testSession['duration_seconds'] = round($endTime - $startTime, 3);
+        
         // Print summary
         $this->printSummary();
+        
+        // Generate JSON output
+        if ($outputJson) {
+            $jsonData = $this->generateJsonReport();
+            $this->saveJsonToFile($jsonData);
+            
+            if ($s3Upload) {
+                $this->uploadToS3($jsonData);
+            }
+        }
+        
+        return $this->generateJsonReport();
+    }
+
+    private function generateJsonReport() {
+        $passed = 0;
+        $failed = 0;
+        
+        foreach ($this->results as $result) {
+            if ($result['success']) {
+                $passed++;
+            } else {
+                $failed++;
+            }
+        }
+        
+        $report = [
+            'test_session' => $this->testSession,
+            'summary' => [
+                'total_tests' => count($this->results),
+                'passed' => $passed,
+                'failed' => $failed,
+                'success_rate' => round(($passed / count($this->results)) * 100, 2),
+                'status' => $passed === count($this->results) ? 'ALL_PASSED' : 'SOME_FAILED'
+            ],
+            'test_results' => array_map(function($result) {
+                return [
+                    'test_name' => $result['test'],
+                    'status' => $result['success'] ? 'PASSED' : 'FAILED',
+                    'message' => $result['message'],
+                    'timestamp' => date('c')
+                ];
+            }, $this->results),
+            'environment' => [
+                'api_endpoint' => $this->baseUrl . '/redis-list.php',
+                'test_timestamp' => date('c'),
+                'timezone' => date_default_timezone_get()
+            ],
+            'metadata' => [
+                'generated_by' => 'RedisListTester',
+                'version' => '1.0',
+                'format_version' => '1.0'
+            ]
+        ];
+        
+        return $report;
+    }
+
+    private function formatBytes($size, $precision = 2) {
+        $units = array('B', 'KB', 'MB', 'GB', 'TB');
+        for ($i = 0; $size > 1024 && $i < count($units) - 1; $i++) {
+            $size /= 1024;
+        }
+        return round($size, $precision) . ' ' . $units[$i];
+    }
+    
+    private function saveJsonToFile($jsonData) {
+        $filename = sprintf(
+            'redis_test_results_%s_%s.json',
+            date('Y-m-d_H-i-s'),
+            $this->testSession['session_id']
+        );
+        
+        $jsonString = json_encode($jsonData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        
+        if (file_put_contents($filename, $jsonString)) {
+            echo "📄 JSON report saved to: {$filename}\n";
+            echo "   File size: " . $this->formatBytes(filesize($filename)) . "\n\n";
+        } else {
+            echo "❌ Failed to save JSON report\n\n";
+        }
+        
+        return $filename;
+    }
+
+    private function uploadToS3($jsonData) {
+        echo "Uploading to S3...\n";
+        if ($this->uploadViaAwsSdk($jsonData)) {
+            return;
+        }
+    }
+
+    private function uploadViaAwsSdk($jsonData) {
+        if (!class_exists('Aws\S3\S3Client')) {
+            echo "   ⚠️ AWS SDK not found (composer require aws/aws-sdk-php)\n";
+            return false;
+        }
+        
+        try {
+            $s3 = new \Aws\S3\S3Client([
+                'version' => 'latest',
+                'region'  => getenv('AWS_REGION') ?: 'us-east-1'
+            ]);
+            
+            $bucket = getenv('S3_BUCKET_NAME') ?: 'your-test-results-bucket';
+            $key = sprintf(
+                'test-results/%s/redis_test_%s.json',
+                date('Y/m/d'),
+                $this->testSession['session_id']
+            );
+            
+            $result = $s3->putObject([
+                'Bucket' => $bucket,
+                'Key'    => $key,
+                'Body'   => json_encode($jsonData, JSON_PRETTY_PRINT),
+                'ContentType' => 'application/json',
+                'Metadata' => [
+                    'test-session-id' => $this->testSession['session_id'],
+                    'test-timestamp' => date('c'),
+                    'test-status' => $jsonData['summary']['status']
+                ]
+            ]);
+            
+            echo "   ✅ Successfully uploaded to S3: s3://{$bucket}/{$key}\n";
+            echo "   ETag: {$result['ETag']}\n\n";
+            return true;
+            
+        } catch (Exception $e) {
+            echo "   ❌ S3 upload error: " . $e->getMessage() . "\n\n";
+            return false;
+        }
     }
     
     private function testGetEmptyList() {
@@ -364,4 +502,4 @@ if ($argc > 1) {
 echo "Testing Redis List API at: {$baseUrl}/redis-list.php\n\n";
 
 $tester = new RedisListTester($baseUrl);
-$tester->runTests();
+$tester->runTests(true, true);

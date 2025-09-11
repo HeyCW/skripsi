@@ -3,6 +3,11 @@ output "bucket_id" {
   value       = aws_s3_bucket.bucket.id
 }
 
+output "bucket_name" {
+  description = "The Bucket Name"
+  value = aws_s3_bucket.bucket.bucket
+}
+
 output "bucket_arn" {
   description = "The ARN of the bucket"
   value       = aws_s3_bucket.bucket.arn
