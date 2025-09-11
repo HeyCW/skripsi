@@ -17,7 +17,6 @@ composer.lock
 # Terraform files
 *.tfstate
 *.tfstate.*
-*.tfvars
 .terraform/
 .terraform.lock.hcl
 terraform.tfstate.backup*
