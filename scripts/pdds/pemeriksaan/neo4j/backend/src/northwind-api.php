@@ -197,7 +197,7 @@ try {
         $query = "
             MATCH (s1:Supplier)-[:SUPPLIES]->(p1:Product)-[:PART_OF]->(c:Category)<-[:PART_OF]-(p2:Product)<-[:SUPPLIES]-(s2:Supplier) 
             WHERE s1.companyName = \$company AND s1 <> s2 
-            RETURN s2.companyName as Competitor, count(DISTINCT c) as NoProducts 
+            RETURN s2.companyName as Competitor, count(DISTINCT p2) as NoProducts 
             ORDER BY NoProducts DESC, Competitor ASC
         ";
         

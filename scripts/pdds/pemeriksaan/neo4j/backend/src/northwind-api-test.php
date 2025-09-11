@@ -329,25 +329,25 @@ class Neo4jApiTester {
             [
                 'name' => 'Exotic Liquids',
                 'competitors' => [
+                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 4],
+                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 3],
+                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 2],
+                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 2],
                     ['Competitor' => 'Leka Trading', 'NoProducts' => 2],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 2],
                     ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 2],
-                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 1],
-                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 1],
                     ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
-                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 1],
                     ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
                     ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
-                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 1],
                     ['Competitor' => 'Refrescos Americanas LTDA', 'NoProducts' => 1]
                 ]
             ],
             [
                 'name' => 'New Orleans Cajun Delights',
                 'competitors' => [
+                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 2],
                     ['Competitor' => 'Exotic Liquids', 'NoProducts' => 1],
                     ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
-                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 1],
                     ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
                     ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 1],
@@ -357,13 +357,13 @@ class Neo4jApiTester {
             [
                 'name' => 'Grandma Kelly\'s Homestead',
                 'competitors' => [
+                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 4],
                     ['Competitor' => 'Mayumi\'s', 'NoProducts' => 2],
                     ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 2],
                     ['Competitor' => 'Exotic Liquids', 'NoProducts' => 1],
                     ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
                     ['Competitor' => 'G\'day', 'NoProducts' => 1],
                     ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
-                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 1],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 1],
                     ['Competitor' => 'Tokyo Traders', 'NoProducts' => 1]
                 ]
@@ -371,31 +371,35 @@ class Neo4jApiTester {
             [
                 'name' => 'Tokyo Traders',
                 'competitors' => [
+                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 3],
                     ['Competitor' => 'G\'day', 'NoProducts' => 2],
+                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 2],
+                    ['Competitor' => 'Ma Maison', 'NoProducts' => 2],
                     ['Competitor' => 'Mayumi\'s', 'NoProducts' => 2],
+                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 2],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 2],
                     ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 2],
                     ['Competitor' => 'Escargots Nouveaux', 'NoProducts' => 1],
                     ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 1],
-                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 1],
-                    ['Competitor' => 'Ma Maison', 'NoProducts' => 1],
-                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 1],
-                    ['Competitor' => 'Nord-Ost-Fisch Handelsgesellschaft mbH', 'NoProducts' => 1],
-                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 1]
+                    ['Competitor' => 'Nord-Ost-Fisch Handelsgesellschaft mbH', 'NoProducts' => 1]
                 ]
             ],
             [
                 'name' => 'Cooperativa de Quesos \'Las Cabras\'',
                 'competitors' => [
-                    ['Competitor' => 'Formaggi Fortini s.r.l.', 'NoProducts' => 1],
-                    ['Competitor' => 'Gai pâturage', 'NoProducts' => 1],
-                    ['Competitor' => 'Norske Meierier', 'NoProducts' => 1]
+                    ['Competitor' => 'Formaggi Fortini s.r.l.', 'NoProducts' => 3],
+                    ['Competitor' => 'Norske Meierier', 'NoProducts' => 3],
+                    ['Competitor' => 'Gai pâturage', 'NoProducts' => 2]
                 ]
             ],
             [
                 'name' => 'Mayumi\'s',
                 'competitors' => [
-                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 2],
+                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 4],
+                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 3],
+                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 3],
+                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 2],
+                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 2],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 2],
                     ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 2],
                     ['Competitor' => 'Tokyo Traders', 'NoProducts' => 2],
@@ -404,65 +408,61 @@ class Neo4jApiTester {
                     ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
                     ['Competitor' => 'G\'day', 'NoProducts' => 1],
                     ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
-                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 1],
-                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 1],
-                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 1],
-                    ['Competitor' => 'Nord-Ost-Fisch Handelsgesellschaft mbH', 'NoProducts' => 1],
-                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 1]
+                    ['Competitor' => 'Nord-Ost-Fisch Handelsgesellschaft mbH', 'NoProducts' => 1]
                 ]
             ],
             [
                 'name' => 'Pavlova',
                 'competitors' => [
+                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 4],
+                    ['Competitor' => 'Specialty Biscuits', 'NoProducts' => 4],
+                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 3],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 3],
+                    ['Competitor' => 'Heli Süßwaren GmbH & Co. KG', 'NoProducts' => 3],
+                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 3],
                     ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 3],
-                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 2],
+                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 3],
+                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 2],
                     ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 2],
-                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 2],
+                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 2],
                     ['Competitor' => 'Leka Trading', 'NoProducts' => 2],
+                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 2],
+                    ['Competitor' => 'Ma Maison', 'NoProducts' => 2],
                     ['Competitor' => 'Mayumi\'s', 'NoProducts' => 2],
+                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 2],
                     ['Competitor' => 'Tokyo Traders', 'NoProducts' => 2],
-                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 1],
-                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 1],
+                    ['Competitor' => 'Zaanse Snoepfabriek', 'NoProducts' => 2],
                     ['Competitor' => 'Escargots Nouveaux', 'NoProducts' => 1],
                     ['Competitor' => 'G\'day', 'NoProducts' => 1],
-                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 1],
-                    ['Competitor' => 'Heli Süßwaren GmbH & Co. KG', 'NoProducts' => 1],
-                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 1],
-                    ['Competitor' => 'Ma Maison', 'NoProducts' => 1],
-                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 1],
-                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 1],
                     ['Competitor' => 'Nord-Ost-Fisch Handelsgesellschaft mbH', 'NoProducts' => 1],
-                    ['Competitor' => 'Refrescos Americanas LTDA', 'NoProducts' => 1],
-                    ['Competitor' => 'Specialty Biscuits', 'NoProducts' => 1],
-                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 1],
-                    ['Competitor' => 'Zaanse Snoepfabriek', 'NoProducts' => 1]
+                    ['Competitor' => 'Refrescos Americanas LTDA', 'NoProducts' => 1]
                 ]
             ],
             [
                 'name' => 'Specialty Biscuits',
                 'competitors' => [
+                    ['Competitor' => 'Heli Süßwaren GmbH & Co. KG', 'NoProducts' => 3],
+                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 2],
+                    ['Competitor' => 'Zaanse Snoepfabriek', 'NoProducts' => 2],
                     ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
-                    ['Competitor' => 'Heli Süßwaren GmbH & Co. KG', 'NoProducts' => 1],
-                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
-                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
-                    ['Competitor' => 'Zaanse Snoepfabriek', 'NoProducts' => 1]
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1]
                 ]
             ],
             [
                 'name' => 'PB Knäckebröd AB',
                 'competitors' => [
+                    ['Competitor' => 'Pasta Buttini s.r.l.', 'NoProducts' => 2],
                     ['Competitor' => 'G\'day', 'NoProducts' => 1],
                     ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
-                    ['Competitor' => 'Pasta Buttini s.r.l.', 'NoProducts' => 1],
                     ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 1]
                 ]
             ],
             [
                 'name' => 'Refrescos Americanas LTDA',
                 'competitors' => [
-                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 1],
-                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 1],
-                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 1],
+                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 3],
+                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 2],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 2],
                     ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
                     ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 1],
@@ -472,67 +472,67 @@ class Neo4jApiTester {
             [
                 'name' => 'Heli Süßwaren GmbH & Co. KG',
                 'competitors' => [
+                    ['Competitor' => 'Specialty Biscuits', 'NoProducts' => 4],
+                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 2],
+                    ['Competitor' => 'Zaanse Snoepfabriek', 'NoProducts' => 2],
                     ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
-                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
-                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
-                    ['Competitor' => 'Specialty Biscuits', 'NoProducts' => 1],
-                    ['Competitor' => 'Zaanse Snoepfabriek', 'NoProducts' => 1]
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1]
                 ]
             ],
             [
                 'name' => 'Plutzer Lebensmittelgroßmärkte AG',
                 'competitors' => [
+                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 4],
+                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 3],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 3],
                     ['Competitor' => 'G\'day', 'NoProducts' => 3],
+                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 3],
                     ['Competitor' => 'Leka Trading', 'NoProducts' => 3],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 3],
-                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 2],
-                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 2],
+                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 2],
+                    ['Competitor' => 'Ma Maison', 'NoProducts' => 2],
                     ['Competitor' => 'Mayumi\'s', 'NoProducts' => 2],
+                    ['Competitor' => 'PB Knäckebröd AB', 'NoProducts' => 2],
+                    ['Competitor' => 'Pasta Buttini s.r.l.', 'NoProducts' => 2],
                     ['Competitor' => 'Tokyo Traders', 'NoProducts' => 2],
-                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 1],
-                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 1],
                     ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
                     ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
-                    ['Competitor' => 'Ma Maison', 'NoProducts' => 1],
-                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 1],
-                    ['Competitor' => 'PB Knäckebröd AB', 'NoProducts' => 1],
-                    ['Competitor' => 'Pasta Buttini s.r.l.', 'NoProducts' => 1],
                     ['Competitor' => 'Refrescos Americanas LTDA', 'NoProducts' => 1]
                 ]
             ],
             [
                 'name' => 'Nord-Ost-Fisch Handelsgesellschaft mbH',
                 'competitors' => [
+                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 3],
+                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 2],
+                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 2],
                     ['Competitor' => 'Escargots Nouveaux', 'NoProducts' => 1],
-                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 1],
                     ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
-                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 1],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 1],
-                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 1],
                     ['Competitor' => 'Tokyo Traders', 'NoProducts' => 1]
                 ]
             ],
             [
                 'name' => 'Formaggi Fortini s.r.l.',
                 'competitors' => [
-                    ['Competitor' => 'Cooperativa de Quesos \'Las Cabras\'', 'NoProducts' => 1],
-                    ['Competitor' => 'Gai pâturage', 'NoProducts' => 1],
-                    ['Competitor' => 'Norske Meierier', 'NoProducts' => 1]
+                    ['Competitor' => 'Norske Meierier', 'NoProducts' => 3],
+                    ['Competitor' => 'Cooperativa de Quesos \'Las Cabras\'', 'NoProducts' => 2],
+                    ['Competitor' => 'Gai pâturage', 'NoProducts' => 2]
                 ]
             ],
             [
                 'name' => 'Norske Meierier',
                 'competitors' => [
-                    ['Competitor' => 'Cooperativa de Quesos \'Las Cabras\'', 'NoProducts' => 1],
-                    ['Competitor' => 'Formaggi Fortini s.r.l.', 'NoProducts' => 1],
-                    ['Competitor' => 'Gai pâturage', 'NoProducts' => 1]
+                    ['Competitor' => 'Formaggi Fortini s.r.l.', 'NoProducts' => 3],
+                    ['Competitor' => 'Cooperativa de Quesos \'Las Cabras\'', 'NoProducts' => 2],
+                    ['Competitor' => 'Gai pâturage', 'NoProducts' => 2]
                 ]
             ],
             [
                 'name' => 'Bigfoot Breweries',
                 'competitors' => [
-                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 1],
-                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 1],
+                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 2],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 2],
                     ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
                     ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 1],
@@ -543,10 +543,10 @@ class Neo4jApiTester {
             [
                 'name' => 'Svensk Sjöföda AB',
                 'competitors' => [
+                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 2],
+                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 2],
                     ['Competitor' => 'Escargots Nouveaux', 'NoProducts' => 1],
-                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 1],
                     ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
-                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 1],
                     ['Competitor' => 'Nord-Ost-Fisch Handelsgesellschaft mbH', 'NoProducts' => 1],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 1],
                     ['Competitor' => 'Tokyo Traders', 'NoProducts' => 1]
@@ -555,8 +555,8 @@ class Neo4jApiTester {
             [
                 'name' => 'Aux joyeux ecclésiastiques',
                 'competitors' => [
-                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 1],
-                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 1],
+                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 3],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 2],
                     ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
                     ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 1],
@@ -567,84 +567,84 @@ class Neo4jApiTester {
             [
                 'name' => 'New England Seafood Cannery',
                 'competitors' => [
+                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 3],
+                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 2],
                     ['Competitor' => 'Escargots Nouveaux', 'NoProducts' => 1],
-                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 1],
                     ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
                     ['Competitor' => 'Nord-Ost-Fisch Handelsgesellschaft mbH', 'NoProducts' => 1],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 1],
-                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 1],
                     ['Competitor' => 'Tokyo Traders', 'NoProducts' => 1]
                 ]
             ],
             [
                 'name' => 'Leka Trading',
                 'competitors' => [
+                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 4],
+                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 3],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 3],
                     ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 3],
-                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 2],
+                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 2],
+                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 2],
+                    ['Competitor' => 'PB Knäckebröd AB', 'NoProducts' => 2],
+                    ['Competitor' => 'Pasta Buttini s.r.l.', 'NoProducts' => 2],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 2],
-                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 1],
-                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 1],
                     ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
                     ['Competitor' => 'G\'day', 'NoProducts' => 1],
-                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 1],
                     ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
                     ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
-                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 1],
-                    ['Competitor' => 'PB Knäckebröd AB', 'NoProducts' => 1],
-                    ['Competitor' => 'Pasta Buttini s.r.l.', 'NoProducts' => 1],
                     ['Competitor' => 'Refrescos Americanas LTDA', 'NoProducts' => 1]
                 ]
             ],
             [
                 'name' => 'Lyngbysild',
                 'competitors' => [
+                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 3],
+                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 2],
                     ['Competitor' => 'Escargots Nouveaux', 'NoProducts' => 1],
                     ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
-                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 1],
                     ['Competitor' => 'Nord-Ost-Fisch Handelsgesellschaft mbH', 'NoProducts' => 1],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 1],
-                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 1],
                     ['Competitor' => 'Tokyo Traders', 'NoProducts' => 1]
                 ]
             ],
             [
                 'name' => 'Zaanse Snoepfabriek',
                 'competitors' => [
+                    ['Competitor' => 'Specialty Biscuits', 'NoProducts' => 4],
+                    ['Competitor' => 'Heli Süßwaren GmbH & Co. KG', 'NoProducts' => 3],
+                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 2],
                     ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
-                    ['Competitor' => 'Heli Süßwaren GmbH & Co. KG', 'NoProducts' => 1],
-                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
-                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
-                    ['Competitor' => 'Specialty Biscuits', 'NoProducts' => 1]
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1]
                 ]
             ],
             [
                 'name' => 'Karkki Oy',
                 'competitors' => [
+                    ['Competitor' => 'Specialty Biscuits', 'NoProducts' => 4],
+                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 3],
+                    ['Competitor' => 'Heli Süßwaren GmbH & Co. KG', 'NoProducts' => 3],
+                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 2],
+                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 2],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 2],
-                    ['Competitor' => 'Aux joyeux ecclésiastiques', 'NoProducts' => 1],
-                    ['Competitor' => 'Bigfoot Breweries', 'NoProducts' => 1],
-                    ['Competitor' => 'Exotic Liquids', 'NoProducts' => 1],
+                    ['Competitor' => 'Zaanse Snoepfabriek', 'NoProducts' => 2],
                     ['Competitor' => 'Forêts d\'érables', 'NoProducts' => 1],
-                    ['Competitor' => 'Heli Süßwaren GmbH & Co. KG', 'NoProducts' => 1],
                     ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
                     ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 1],
-                    ['Competitor' => 'Refrescos Americanas LTDA', 'NoProducts' => 1],
-                    ['Competitor' => 'Specialty Biscuits', 'NoProducts' => 1],
-                    ['Competitor' => 'Zaanse Snoepfabriek', 'NoProducts' => 1]
+                    ['Competitor' => 'Refrescos Americanas LTDA', 'NoProducts' => 1]
                 ]
             ],
-            [
+           [
                 'name' => 'G\'day',
                 'competitors' => [
                     ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 3],
+                    ['Competitor' => 'Ma Maison', 'NoProducts' => 2],
+                    ['Competitor' => 'PB Knäckebröd AB', 'NoProducts' => 2],
+                    ['Competitor' => 'Pasta Buttini s.r.l.', 'NoProducts' => 2],
                     ['Competitor' => 'Tokyo Traders', 'NoProducts' => 2],
                     ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 1],
                     ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
-                    ['Competitor' => 'Ma Maison', 'NoProducts' => 1],
                     ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
-                    ['Competitor' => 'Pasta Buttini s.r.l.', 'NoProducts' => 1],
-                    ['Competitor' => 'Pavlova', 'NoProducts' => 1],
-                    ['Competitor' => 'PB Knäckebröd AB', 'NoProducts' => 1]
+                    ['Competitor' => 'Pavlova', 'NoProducts' => 1]
                 ]
             ],
             [
@@ -659,46 +659,46 @@ class Neo4jApiTester {
             [
                 'name' => 'Pasta Buttini s.r.l.',
                 'competitors' => [
+                    ['Competitor' => 'PB Knäckebröd AB', 'NoProducts' => 2],
                     ['Competitor' => 'G\'day', 'NoProducts' => 1],
                     ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
-                    ['Competitor' => 'PB Knäckebröd AB', 'NoProducts' => 1],
                     ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 1]
                 ]
             ],
             [
                 'name' => 'Escargots Nouveaux',
                 'competitors' => [
-                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 1],
+                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 3],
+                    ['Competitor' => 'Lyngbysild', 'NoProducts' => 2],
+                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 2],
                     ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
-                    ['Competitor' => 'New England Seafood Cannery', 'NoProducts' => 1],
                     ['Competitor' => 'Nord-Ost-Fisch Handelsgesellschaft mbH', 'NoProducts' => 1],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 1],
-                    ['Competitor' => 'Svensk Sjöföda AB', 'NoProducts' => 1],
                     ['Competitor' => 'Tokyo Traders', 'NoProducts' => 1]
                 ]
             ],
             [
                 'name' => 'Gai pâturage',
                 'competitors' => [
-                    ['Competitor' => 'Cooperativa de Quesos \'Las Cabras\'', 'NoProducts' => 1],
-                    ['Competitor' => 'Formaggi Fortini s.r.l.', 'NoProducts' => 1],
-                    ['Competitor' => 'Norske Meierier', 'NoProducts' => 1]
+                    ['Competitor' => 'Formaggi Fortini s.r.l.', 'NoProducts' => 3],
+                    ['Competitor' => 'Norske Meierier', 'NoProducts' => 3],
+                    ['Competitor' => 'Cooperativa de Quesos \'Las Cabras\'', 'NoProducts' => 2]
                 ]
             ],
             [
                 'name' => 'Forêts d\'érables',
                 'competitors' => [
+                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 4],
+                    ['Competitor' => 'Specialty Biscuits', 'NoProducts' => 4],
+                    ['Competitor' => 'Heli Süßwaren GmbH & Co. KG', 'NoProducts' => 3],
+                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 2],
+                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 2],
                     ['Competitor' => 'Pavlova', 'NoProducts' => 2],
+                    ['Competitor' => 'Zaanse Snoepfabriek', 'NoProducts' => 2],
                     ['Competitor' => 'Exotic Liquids', 'NoProducts' => 1],
-                    ['Competitor' => 'Grandma Kelly\'s Homestead', 'NoProducts' => 1],
-                    ['Competitor' => 'Heli Süßwaren GmbH & Co. KG', 'NoProducts' => 1],
-                    ['Competitor' => 'Karkki Oy', 'NoProducts' => 1],
                     ['Competitor' => 'Leka Trading', 'NoProducts' => 1],
                     ['Competitor' => 'Mayumi\'s', 'NoProducts' => 1],
-                    ['Competitor' => 'New Orleans Cajun Delights', 'NoProducts' => 1],
-                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 1],
-                    ['Competitor' => 'Specialty Biscuits', 'NoProducts' => 1],
-                    ['Competitor' => 'Zaanse Snoepfabriek', 'NoProducts' => 1]
+                    ['Competitor' => 'Plutzer Lebensmittelgroßmärkte AG', 'NoProducts' => 1]
                 ]
             ]
         ];
