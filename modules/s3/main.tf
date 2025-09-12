@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "bucket" {
-  bucket = "${var.project_name}-${var.environment}-${random_string.bucket_suffix.result}"
+  bucket = "${var.project_name}-${var.environment}-${var.random_string}"
 
   force_destroy = true 
 
