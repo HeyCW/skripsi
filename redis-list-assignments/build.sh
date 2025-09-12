@@ -35,10 +35,6 @@ case $response in
         terraform apply tfplan
         echo "Deployment completed successfully!"
         
-        # Show outputs
-        echo "Terraform outputs:"
-        terraform output
-        ;;
     *)
         echo "Deployment cancelled by user"
         rm -f tfplan
