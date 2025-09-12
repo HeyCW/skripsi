@@ -13,7 +13,7 @@ provider "aws" {
 
 # Network Module
 module "network" {
-  source = "./modules/network"
+  source = "../modules/network"
 
   project_name    =  var.project_name
   environment     = var.environment  
@@ -25,7 +25,7 @@ module "network" {
 }
 
 module "bucket" {
-  source = "./modules/s3"
+  source = "../modules/s3"
   project_name              = var.project_name
   environment                = var.environment
   versioning_enabled         = true
@@ -37,7 +37,7 @@ module "bucket" {
 }
 
 module "ec2" {
-  source = "./modules/ec2"
+  source = "../modules/ec2"
 
   project_name           = var.project_name
   environment            = var.environment
@@ -62,7 +62,7 @@ module "ec2" {
 }
 
 module "cloud9" {
-  source = "./modules/cloud9"
+  source = "../modules/cloud9"
 
   project_name                =  var.project_name  
   environment_name            = var.cloud9_environment_name
@@ -75,7 +75,7 @@ module "cloud9" {
 }
 
 module "ecs-fargate" {
-  source = "./modules/ecs-fargate"
+  source = "../modules/ecs-fargate"
   subnets = [ module.network.public_subnet_ids[0], module.network.public_subnet_ids[1] ]
   security_groups = [ module.network.web_sg_id ]
 }
@@ -118,7 +118,7 @@ resource "aws_s3_object" "setup" {
 # }
 
 module "lambda_processor" {
-  source = "./modules/lambda"
+  source = "../modules/lambda"
 
   # Required variables
   project_name   = "log-processor"
