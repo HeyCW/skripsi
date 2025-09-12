@@ -10,11 +10,7 @@ resource "aws_s3_bucket" "bucket" {
   }, var.additional_tags)
 }
 
-resource "random_string" "bucket_suffix" {
-  length  = 8
-  special = false
-  upper   = false
-}
+
 
 resource "aws_s3_bucket_versioning" "bucket_versioning" {
   bucket = aws_s3_bucket.bucket.id

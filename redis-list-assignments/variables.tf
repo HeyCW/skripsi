@@ -212,7 +212,7 @@ variable "additional_ebs_volumes" {
 variable "user_data_script" {
   description = "User data script to run on instance startup"
   type        = string
-  default     = "/scripts/pdds/redis/script.sh"
+  default     = "../scripts/pdds/redis/script.sh"
 }
 
 variable "create_eip" {

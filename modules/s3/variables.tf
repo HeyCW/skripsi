@@ -1,3 +1,8 @@
+variable "random_string" {
+  description = "Random String untuk memberi nama unik ke bucket"
+  type = string
+}
+
 variable "project_name" {
   description = "Name of the project"
   type        = string

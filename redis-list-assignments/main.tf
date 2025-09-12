@@ -24,8 +24,15 @@ module "network" {
   public_subnets  = var.public_subnets
 }
 
+resource "random_string" "bucket_suffix" {
+  length  = 8
+  special = false
+  upper   = false
+}
+
 module "bucket" {
   source = "../modules/s3"
+  random_string = random_string.bucket_suffix
   project_name              = var.project_name
   environment                = var.environment
   versioning_enabled         = true
@@ -125,8 +132,8 @@ module "lambda_processor" {
   environment    = "dev"
   
   # Lambda configuration
-  lambda_filename       = "lambda-code/lambda_function.zip"
-  lambda_layer_filename = "lambda-code/python.zip"
+  lambda_filename       = "../lambda-code/lambda_function.zip"
+  lambda_layer_filename = "../lambda-code/python.zip"
   handler              = "lambda_function.lambda_handler"
   runtime              = "python3.11"
   timeout              = 300

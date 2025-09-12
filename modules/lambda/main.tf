@@ -57,6 +57,15 @@ resource "aws_lambda_function" "main" {
   }
 }
 
+# Lambda Permission untuk S3
+resource "aws_lambda_permission" "allow_s3_invoke" {
+  statement_id  = "AllowExecutionFromS3Bucket"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.main.function_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = "arn:aws:s3:::${var.s3_bucket_name}"
+}
+
 # S3 Bucket Notification
 resource "aws_s3_bucket_notification" "bucket_notification" {
   bucket = var.s3_bucket_name
@@ -67,4 +76,9 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
     filter_prefix       = var.s3_filter_prefix
     filter_suffix       = var.s3_filter_suffix
   }
+
+  depends_on = [ aws_lambda_function.main,
+    aws_lambda_permission.allow_s3_invoke
+   ]
+
 }
