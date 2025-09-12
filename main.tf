@@ -32,7 +32,7 @@ resource "random_string" "bucket_suffix" {
 
 module "bucket" {
   source = "./modules/s3"
-  random_string = random_string.bucket_suffix
+  random_string = random_string.bucket_suffix.result
   project_name              = var.project_name
   environment                = var.environment
   versioning_enabled         = true
