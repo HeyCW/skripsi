@@ -60,6 +60,3 @@ boto3/
 # File-file sistem operasi
 .DS_Store
 Thumbs.db
-
-# Paket deployment
-*.zip
