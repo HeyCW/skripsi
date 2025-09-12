@@ -24,8 +24,15 @@ module "network" {
   public_subnets  = var.public_subnets
 }
 
+resource "random_string" "bucket_suffix" {
+  length  = 8
+  special = false
+  upper   = false
+}
+
 module "bucket" {
   source = "./modules/s3"
+  random_string = random_string.bucket_suffix
   project_name              = var.project_name
   environment                = var.environment
   versioning_enabled         = true
