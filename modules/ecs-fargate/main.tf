@@ -19,7 +19,7 @@ resource "aws_cloudwatch_log_group" "ecs_my_app_service" {
 
 # Bucket untuk export CloudWatch Logs
 resource "aws_s3_bucket" "ecs_logs" {
-  bucket        = "my-log-bucket-skripsi" 
+  bucket        = "my-log-bucket" 
   force_destroy = true
 
   tags = {

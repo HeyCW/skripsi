@@ -35,3 +35,9 @@ output "cloud9_ec2_id" {
   description = "The ID of the EC2 instance running the Cloud9 Environment"
   value       = data.aws_instance.cloud9_instance.id
 }
+
+
+output "cloud9_ip" {
+  description = "IP for Cloud9"
+  value = data.aws_instance.cloud9_instance.public_ip
+}

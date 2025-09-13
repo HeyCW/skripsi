@@ -13,6 +13,12 @@ output "cloud9_link" {
   value       = module.cloud9.environment_url
 }
 
-output "nama_bucket" {
+output "cloud9_ip" {
+  description = "IP address for Cloud9" 
+  value = module.cloud9.cloud9_ip
+}
+
+output "bucket_name" {
   value = module.bucket.bucket_name
 }
+

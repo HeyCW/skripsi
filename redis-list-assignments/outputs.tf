@@ -13,7 +13,12 @@ output "cloud9_link" {
   value       = module.cloud9.environment_url
 }
 
-output "cloud9_ec2_id" {
-  description = "The ID of the EC2 instance running the Cloud9 Environment"
-  value       = module.cloud9.cloud9_ec2_id
+output "cloud9_ip" {
+  description = "IP address for Cloud9" 
+  value = module.cloud9.cloud9_ip
 }
+
+output "bucket_name" {
+  value = module.bucket.bucket_name
+}
+
