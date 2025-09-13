@@ -125,9 +125,9 @@ download_file() {
 }
 
 # Download project files
-download_file "https://raw.githubusercontent.com/HeyCW/skripsi/refs/heads/main/assignments/redis-lab/redis-timeseries/redis-list.php" "redis-list.php"
-download_file "https://raw.githubusercontent.com/HeyCW/skripsi/refs/heads/main/assignments/redis-lab/redis-timeseries/redis-list.html" "redis-list.html"
-download_file "https://raw.githubusercontent.com/HeyCW/skripsi/refs/heads/main/assignments/redis-lab/redis-timeseries/README.md" "README.md"
+download_file "https://raw.githubusercontent.com/HeyCW/skripsi/refs/heads/main/assignments/redis-lab/redis-list/redis-list-soal.php" "redis-list.php"
+download_file "https://raw.githubusercontent.com/HeyCW/skripsi/refs/heads/main/assignments/redis-lab/redis-list/redis-list-soal.html" "redis-list.html"
+download_file "https://raw.githubusercontent.com/HeyCW/skripsi/refs/heads/main/assignments/redis-lab/redis-list/README.md" "README.md"
 
 echo ""
 echo "=== Setup Complete! ==="
@@ -137,4 +137,5 @@ echo "✓ Dependencies installed (Predis)"
 echo "✓ Project files downloaded"
 echo ""
 echo "You can now run your PHP Redis applications!"
-echo "Example: php -S 127.0.0.1:80"
+echo "Example: php -S 0.0.0.0:8080"
+echo "Create new tab lalu memasukan {cloud9_ip}:8080/redis-list.html"
